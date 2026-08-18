@@ -37,6 +37,13 @@ router.put(
     ticketController.updateTicket
 );
 
+// Assign Ticket To User
+router.patch(
+    "/:id/assign",
+    authMiddleware,
+    ticketController.assignTicket
+);
+
 
 // Delete Ticket
 router.delete(

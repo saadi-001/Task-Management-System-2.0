@@ -40,10 +40,23 @@ const deleteTicket = async (ticketId) => {
     });
 };
 
+// Assign Ticket To User
+const assignTicket = async (ticketId, userId) => {
+    return await prisma.task.update({
+        where: {
+            TaskID: ticketId,
+        },
+        data: {
+            AssignedTo: userId,
+        },
+    });
+};
+
 module.exports = {
     createTicket,
     findTicketById,
     findAllTickets,
     updateTicket,
     deleteTicket,
+    assignTicket,
 };

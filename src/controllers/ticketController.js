@@ -107,10 +107,38 @@ const deleteTicket = async (req, res) => {
     }
 };
 
+// Assign Ticket To User
+const assignTicket = async (req, res) => {
+    try {
+        const ticketId = Number(req.params.id);
+        const userId = Number(req.body.userId);
+
+        const ticket = await ticketService.assignTicket(
+            ticketId,
+            userId
+        );
+
+        return res.status(200).json({
+            success: true,
+            message: "Ticket assigned successfully",
+            data: ticket,
+        });
+
+    } catch (error) {
+        console.error(error);
+
+        return res.status(error.statusCode || 500).json({
+            success: false,
+            message: error.message || "Failed to assign ticket",
+        });
+    }
+};
+
 module.exports = {
     createTicket,
-    getAllTickets,
     getTicketById,
+    getAllTickets,
     updateTicket,
     deleteTicket,
+    assignTicket,
 };
