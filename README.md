@@ -1,100 +1,221 @@
-🚀 Task Management System 2.0
+<div align="center">
 
-A production-style RESTful Backend API built with Node.js, Express.js, Prisma ORM, and MySQL featuring JWT authentication, RBAC, organization management, project & ticket management, user assignment, MinIO file storage, and a complete ticket status workflow.
+# 🚀 Task Management System 2.0
 
-✨ Project Highlights
+### ⚡ Production-Style Task & Project Management REST API
 
-🔐 JWT Authentication & Authorization
+**Secure • Scalable • Modular • Enterprise-Oriented**
 
-🔒 Password Hashing using bcrypt
+<br>
 
-👤 User Management
+[![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933?style=for-the-badge\&logo=node.js\&logoColor=white)](https://nodejs.org/)
+[![Express.js](https://img.shields.io/badge/Express.js-REST_API-000000?style=for-the-badge\&logo=express\&logoColor=white)](https://expressjs.com/)
+[![Prisma](https://img.shields.io/badge/Prisma-ORM-2D3748?style=for-the-badge\&logo=prisma\&logoColor=white)](https://www.prisma.io/)
+[![MySQL](https://img.shields.io/badge/MySQL-Database-4479A1?style=for-the-badge\&logo=mysql\&logoColor=white)](https://www.mysql.com/)
+[![JWT](https://img.shields.io/badge/JWT-Security-000000?style=for-the-badge\&logo=jsonwebtokens\&logoColor=white)](https://jwt.io/)
+[![MinIO](https://img.shields.io/badge/MinIO-Storage-C72E49?style=for-the-badge\&logo=minio\&logoColor=white)](https://min.io/)
 
-🏢 Organization Management
+<br>
 
-👑 Roles & Permissions (RBAC)
+A backend system designed to manage **organizations, users, projects, tickets, roles, permissions, assignments, and file attachments** through a clean and maintainable REST API.
 
-📁 Project Management
+</div>
 
-🎫 Ticket Management
+---
 
-👤 Assign Tickets to Users
+## 🎯 What This Project Offers
 
-🖼️ Ticket Image Attachments
+<table>
+<tr>
+<td width="50%">
 
-☁️ MinIO Object Storage
+### 🔐 Authentication
 
-🔄 Complete Ticket Status Workflow
+* JWT Authentication
+* Secure bcrypt password hashing
+* Protected API endpoints
 
-📚 Swagger API Documentation
+</td>
+<td width="50%">
 
-🛠 Tech Stack
+### 👑 RBAC
 
-Technology
+* Roles & Permissions
+* Permission-based middleware
+* Access control
 
-Usage
+</td>
+</tr>
 
-Node.js
+<tr>
+<td>
 
-Backend Runtime
+### 🏢 Organizations
 
-Express.js
+* Organization CRUD
+* User assignment
+* Owner management
 
-REST API Framework
+</td>
+<td>
 
-Prisma ORM
+### 📁 Projects
 
-Database ORM
+* Complete CRUD
+* Organization-based management
+* Secure project access
 
-MySQL
+</td>
+</tr>
 
-Database
+<tr>
+<td>
 
-JWT
+### 🎫 Tickets
 
-Authentication
+* Complete CRUD
+* User assignment
+* Status workflow
 
-bcrypt
+</td>
+<td>
 
-Password Hashing
+### 🖼️ Attachments
 
-Multer
+* Multer file handling
+* MinIO object storage
+* Attachment metadata
 
-File Upload Handling
+</td>
+</tr>
+</table>
 
-MinIO
+---
 
-Object Storage
+## 🧠 Architecture
 
-Swagger
+The backend follows a **layered architecture** with clear separation of responsibilities.
 
-API Documentation
+```text
+                    ┌──────────────┐
+                    │    Client    │
+                    └──────┬───────┘
+                           ↓
+                    ┌──────────────┐
+                    │    Routes    │
+                    └──────┬───────┘
+                           ↓
+                    ┌──────────────┐
+                    │  Middleware  │
+                    └──────┬───────┘
+                           ↓
+                    ┌──────────────┐
+                    │ Controllers  │
+                    └──────┬───────┘
+                           ↓
+                    ┌──────────────┐
+                    │   Services   │
+                    └──────┬───────┘
+                           ↓
+                    ┌──────────────┐
+                    │ Repositories │
+                    └──────┬───────┘
+                           ↓
+                    ┌──────────────┐
+                    │ Prisma / ORM │
+                    └──────┬───────┘
+                           ↓
+                    ┌──────────────┐
+                    │    MySQL     │
+                    └──────────────┘
+```
 
-Git & GitHub
+---
 
-Version Control
+## 🛠️ Technology Stack
 
-🏗 System Architecture
+| Layer           | Technology            |
+| --------------- | --------------------- |
+| Runtime         | **Node.js**           |
+| Framework       | **Express.js**        |
+| ORM             | **Prisma**            |
+| Database        | **MySQL**             |
+| Authentication  | **JWT**               |
+| Security        | **bcrypt**            |
+| File Upload     | **Multer**            |
+| Object Storage  | **MinIO**             |
+| Documentation   | **Swagger / OpenAPI** |
+| Version Control | **Git / GitHub**      |
 
-Client
-   │
-   ▼
-Routes
-   │
-Middleware
-   │
-Controllers
-   │
-Services
-   │
-Repositories
-   │
-Prisma ORM
-   │
-MySQL Database
+---
 
-📂 Project Structure
+## 🎫 Ticket Workflow
 
+Business rules are enforced inside the **Service Layer**, preventing invalid ticket transitions.
+
+```text
+┌──────────────┐
+│ Ready to Do  │
+└──────┬───────┘
+       ↓
+┌──────────────┐
+│ In Progress  │
+└──────┬───────┘
+       ↓
+┌──────────────┐
+│   Testing    │
+└──────┬───────┘
+       ↓
+┌──────────────┐
+│     Done     │
+└──────────────┘
+```
+
+### 🔄 Supported Flow
+
+`Ready to Do → In Progress → Testing → Done`
+
+`Ready to Do → Blocked → In Progress`
+
+`Testing → In Progress`
+
+`Done → In Progress`
+
+❌ Invalid transitions are automatically rejected.
+
+---
+
+## 🖼️ File Storage Architecture
+
+```text
+             Image Upload
+                  │
+                  ▼
+              ┌───────┐
+              │Multer │
+              └───┬───┘
+                  ↓
+              ┌───────┐
+              │ MinIO │
+              └───┬───┘
+                  │
+                  ↓
+            File / Object URL
+                  │
+                  ▼
+              ┌───────┐
+              │ MySQL │
+              └───────┘
+          Attachment Metadata
+```
+
+> 📦 **MinIO** stores the actual files, while **MySQL** stores their metadata.
+
+---
+
+## 📂 Project Structure
+
+```text
 Task-Management-System-2.0/
 │
 ├── prisma/
@@ -108,194 +229,89 @@ Task-Management-System-2.0/
 │   ├── repositories/
 │   ├── routes/
 │   ├── services/
-│   └── utils/
+│   ├── utils/
+│   └── app.js
 │
 ├── .env
-├── .gitignore
 ├── package.json
+├── prisma.config.ts
 └── server.js
+```
 
-🔑 Authentication
+---
 
-JWT based authentication protects secured endpoints.
+## 📚 API Overview
 
-Signup
+### 🔐 Authentication
 
-Password
-   ↓
-bcrypt.hash()
-   ↓
-Hashed Password
-   ↓
-MySQL
+```http
+POST /api/auth/signup
+POST /api/auth/login
+```
 
-The original plain password is not stored in the database.
+### 📁 Projects
 
-Login
-
-Email + Password
-       ↓
-bcrypt.compare()
-       ↓
-Generate JWT
-       ↓
-Return Token
-
-Protected requests use:
-
-Authorization: Bearer YOUR_TOKEN
-
-👑 Role Based Access Control
-
-RBAC is implemented using roles and permissions.
-
-User
- ↓
-Role
- ↓
-Permission
- ↓
-Allow / 403 Forbidden
-
-The permission middleware checks whether the logged-in user has the required permission.
-
-🏢 Organization Management
-
-Create Organization
-
-Update Organization
-
-Delete Organization
-
-Assign User
-
-Remove User
-
-Transfer Organization Owner
-
-📁 Project Management
-
-Complete Project CRUD is implemented.
-
+```http
 POST   /api/projects
 GET    /api/projects
 GET    /api/projects/:id
 PUT    /api/projects/:id
 DELETE /api/projects/:id
+```
 
-🎫 Ticket Management
+### 🎫 Tickets
 
-Complete Ticket CRUD is implemented.
-
+```http
 POST   /api/tickets
 GET    /api/tickets
 GET    /api/tickets/:id
 PUT    /api/tickets/:id
 DELETE /api/tickets/:id
-
-Assign Ticket
-
-PATCH /api/tickets/:id/assign
-
-The system checks that both the ticket and user exist before assigning the ticket.
-
-🔄 Ticket Status Workflow
-
-Tickets cannot randomly move between statuses.
-
-Current Status
-
-Allowed Status
-
-Ready to Do
-
-In Progress, Blocked
-
-In Progress
-
-Ready to Do, Blocked, Testing
-
-Blocked
-
-In Progress
-
-Testing
-
-Done, In Progress
-
-Done
-
-In Progress
-
-Invalid transitions are rejected by the ticket service.
-
-Ready to Do → Testing   ❌
-In Progress → Done      ❌
-Blocked → Testing       ❌
-
-🖼️ Ticket Image Attachments
-
-Images are handled using Multer + MinIO.
-
-Image
-  ↓
-Multer
-  ↓
-File Buffer
-  ↓
-MinIO
-  ↓
-File URL
-  ↓
-MySQL Attachment Metadata
-
-MinIO stores the actual uploaded file, while MySQL stores the attachment metadata.
-
-📖 API Documentation
-
-Swagger / OpenAPI is included for API documentation and testing.
-
-http://localhost:3000/api-docs
-
-Main APIs
-
-POST   /api/auth/signup
-POST   /api/auth/login
-
-POST   /api/projects
-GET    /api/projects
-GET    /api/projects/:id
-PUT    /api/projects/:id
-DELETE /api/projects/:id
-
-POST   /api/tickets
-GET    /api/tickets
-GET    /api/tickets/:id
-PUT    /api/tickets/:id
-DELETE /api/tickets/:id
-
 PATCH  /api/tickets/:id/assign
+```
 
-POST   /api/tickets/:ticketId/attachments
-GET    /api/tickets/:ticketId/attachments
+### 🖼️ Attachments
 
-🚀 Installation
+```http
+POST /api/tickets/:ticketId/attachments
+GET  /api/tickets/:ticketId/attachments
+```
 
-Clone Repository
+---
 
+## 📖 Swagger Documentation
+
+Explore and test the API interactively:
+
+### 👉 `http://localhost:3000/api-docs`
+
+---
+
+## ⚡ Quick Start
+
+```bash
+# Clone
 git clone https://github.com/saadi-001/Task-Management-System-2.0.git
+
+# Enter project
 cd Task-Management-System-2.0
 
-Install Dependencies
-
+# Install dependencies
 npm install
 
-Generate Prisma Client
-
+# Generate Prisma Client
 npx prisma generate
 
-Configure .env
+# Run migrations
+npx prisma migrate dev
 
+# Start development server
+npm run dev
+```
+
+### 🔑 Environment Variables
+
+```env
 DATABASE_URL="mysql://USER:PASSWORD@localhost:3306/DATABASE_NAME"
 JWT_SECRET="your_secret"
 
@@ -305,35 +321,41 @@ MINIO_USE_SSL=false
 MINIO_ACCESS_KEY="your_access_key"
 MINIO_SECRET_KEY="your_secret_key"
 MINIO_BUCKET="task-management"
+```
 
-Start Server
+> ⚠️ Never commit real credentials or secrets to GitHub.
 
-npm run dev
+---
 
-⚠️ Never commit real passwords, API keys or secrets to GitHub.
+## 🧩 Engineering Principles
 
-🧪 Testing
+```text
+✓ Separation of Concerns
+✓ Layered Architecture
+✓ Repository Pattern
+✓ Service-Based Business Logic
+✓ Middleware-Based Authorization
+✓ Secure Authentication
+✓ Environment-Based Configuration
+✓ Prisma Database Migrations
+```
 
-Valid Workflow
+---
 
-Ready to Do → In Progress   ✅
-Ready to Do → Blocked       ✅
-Blocked → In Progress       ✅
-In Progress → Testing       ✅
-Testing → Done              ✅
-Testing → In Progress       ✅
-Done → In Progress          ✅
+<div align="center">
 
-Invalid Workflow
+## 👨‍💻 Developed By
 
-Ready to Do → Testing       ❌
-In Progress → Done          ❌
-Blocked → Testing            ❌
+### **Muhammad Saad**
 
-👨‍💻 Author
+**BS Software Engineering**
 
-Muhammad Saad
+<br>
 
-BS Software Engineering
+⭐ **If you like this project, consider giving it a star!**
 
-⭐ If you found this project useful, consider giving it a star.
+<br>
+
+[![GitHub](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge\&logo=github\&logoColor=white)](https://github.com/saadi-001/Task-Management-System-2.0)
+
+</div>
