@@ -1,247 +1,108 @@
-🎯 Task Management System 2.0
+🚀 Task Management System 2.0
 
-A backend Task Management System built with Node.js, Express.js, Prisma and MySQL — with JWT authentication, RBAC, project & ticket management, user assignment, MinIO file storage, and a complete ticket status workflow.
+A production-style RESTful Backend API built with Node.js, Express.js, Prisma ORM, and MySQL featuring JWT authentication, RBAC, organization management, project & ticket management, user assignment, MinIO file storage, and a complete ticket status workflow.
 
-🟦 Project Overview
+✨ Project Highlights
 
-Task Management System 2.0 is a backend application designed to manage:
+🔐 JWT Authentication & Authorization
 
-👤 Users & authentication
+🔒 Password Hashing using bcrypt
 
-🏢 Organizations & members
-
-📁 Projects
-
-🎫 Tickets / Tasks
-
-👥 Ticket assignment
-
-🖼️ Ticket image attachments
-
-🔐 Roles & permissions (RBAC)
-
-🔄 Controlled ticket status workflow
-
-The project follows a clean layered architecture so that routes, controllers, business logic and database queries stay separated.
-
-🟩 Key Features
-
-Feature
-
-Status
-
-🔐 Signup / Login
-
-✅
-
-🔑 JWT Authentication
-
-✅
-
-🔒 Password Hashing with bcrypt
-
-✅
-
-👑 Role Based Access Control (RBAC)
-
-✅
+👤 User Management
 
 🏢 Organization Management
 
-✅
+👑 Roles & Permissions (RBAC)
 
-📁 Project Create / Read / Update / Delete
+📁 Project Management
 
-✅
+🎫 Ticket Management
 
-🎫 Ticket Create / Read / Update / Delete
+👤 Assign Tickets to Users
 
-✅
-
-👤 Assign Ticket to User
-
-✅
-
-🖼️ Attach Images to Ticket
-
-✅
+🖼️ Ticket Image Attachments
 
 ☁️ MinIO Object Storage
 
-✅
+🔄 Complete Ticket Status Workflow
 
-🔄 Ticket Status Workflow
+📚 Swagger API Documentation
 
-✅
+🛠 Tech Stack
 
-📚 Swagger / OpenAPI
+Technology
 
-✅
+Usage
 
-🟪 Architecture
+Node.js
 
-Client
-  ↓
-Routes
-  ↓
-Middleware
-  ↓
-Controller
-  ↓
-Service
-  ↓
-Repository
-  ↓
-Prisma
-  ↓
+Backend Runtime
+
+Express.js
+
+REST API Framework
+
+Prisma ORM
+
+Database ORM
+
 MySQL
 
-📌 File Upload Flow
+Database
 
-Client
-  ↓
+JWT
+
+Authentication
+
+bcrypt
+
+Password Hashing
+
 Multer
-  ↓
-Attachment Service
-  ↓
+
+File Upload Handling
+
 MinIO
-  ↓
-File URL
-  ↓
-MySQL Attachment Metadata
 
-🟨 Authentication
+Object Storage
 
-🔐 Signup
+Swagger
 
-User Password
-     ↓
-bcrypt.hash()
-     ↓
-Hashed Password
-     ↓
-MySQL
+API Documentation
 
-The original plain password is not stored in the database.
+Git & GitHub
 
-🔑 Login
+Version Control
 
-Email + Password
-       ↓
-Find User
-       ↓
-bcrypt.compare()
-       ↓
-Generate JWT
-       ↓
-Return Token
+🏗 System Architecture
 
-🛡️ Protected Request
+Client
+   │
+   ▼
+Routes
+   │
+Middleware
+   │
+Controllers
+   │
+Services
+   │
+Repositories
+   │
+Prisma ORM
+   │
+MySQL Database
 
-Authorization: Bearer <JWT>
-             ↓
-      authMiddleware
-             ↓
-       Verify Token
-             ↓
-          req.user
+📂 Project Structure
 
-🟥 RBAC
-
-The project uses Role Based Access Control (RBAC).
-
-User
- ↓
-UserRole
- ↓
-Role
- ↓
-RolePermission
- ↓
-Permission
- ↓
-Allow / 403 Forbidden
-
-The permissionMiddleware checks whether the logged-in user's role has the required permission.
-
-🔄 Ticket Status Workflow
-
-Tickets cannot randomly jump between statuses.
-
-Available Statuses
-
-Ready to Do • In Progress • Blocked • Testing • Done
-
-✅ Allowed Transitions
-
-Ready to Do
- ├──→ In Progress
- └──→ Blocked ──→ In Progress
-
-In Progress
- ├──→ Ready to Do
- ├──→ Blocked
- └──→ Testing
-
-Testing
- ├──→ Done
- └──→ In Progress
-
-Done
- └──→ In Progress
-
-🚫 Examples of Blocked Transitions
-
-Ready to Do → Testing   ❌
-In Progress → Done      ❌
-Blocked → Testing       ❌
-
-The workflow is handled in the ticket service layer, so invalid transitions are rejected before the database update.
-
-🖼️ Ticket Attachments
-
-Images are handled using Multer + MinIO.
-
-Image Upload
-    ↓
-Multer memoryStorage
-    ↓
-File Buffer
-    ↓
-MinIO Bucket
-    ↓
-FileUrl
-    ↓
-MySQL attachment table
-
-Storage Responsibility
-
-Storage
-
-Responsibility
-
-☁️ MinIO
-
-Stores the actual uploaded file
-
-🗄️ MySQL
-
-Stores FileName, FileUrl, TaskID and attachment metadata
-
-📁 Project Structure
-
-Task Management System 2.0/
+Task-Management-System-2.0/
 │
 ├── prisma/
-│   ├── schema.prisma
-│   └── migrations/
+│   ├── migrations/
+│   └── schema.prisma
 │
 ├── src/
 │   ├── config/
-│   │   ├── prisma.js
-│   │   ├── swagger.js
-│   │   └── minio.js
-│   │
 │   ├── controllers/
 │   ├── middlewares/
 │   ├── repositories/
@@ -254,151 +115,188 @@ Task Management System 2.0/
 ├── package.json
 └── server.js
 
-🧩 Main Modules
+🔑 Authentication
 
-👤 Authentication
+JWT based authentication protects secured endpoints.
 
 Signup
 
+Password
+   ↓
+bcrypt.hash()
+   ↓
+Hashed Password
+   ↓
+MySQL
+
+The original plain password is not stored in the database.
+
 Login
 
-bcrypt password hashing
+Email + Password
+       ↓
+bcrypt.compare()
+       ↓
+Generate JWT
+       ↓
+Return Token
 
-JWT token generation
+Protected requests use:
 
-JWT authentication middleware
+Authorization: Bearer YOUR_TOKEN
 
-🏢 Organizations
+👑 Role Based Access Control
 
-Organization CRUD
+RBAC is implemented using roles and permissions.
 
-Assign users
+User
+ ↓
+Role
+ ↓
+Permission
+ ↓
+Allow / 403 Forbidden
 
-Remove users
+The permission middleware checks whether the logged-in user has the required permission.
 
-Transfer owner
+🏢 Organization Management
 
-📁 Projects
+Create Organization
 
-Create project
+Update Organization
 
-Get projects
+Delete Organization
 
-Get project by ID
+Assign User
 
-Update project
+Remove User
 
-Delete project
+Transfer Organization Owner
 
-🎫 Tickets
+📁 Project Management
 
-Create ticket
+Complete Project CRUD is implemented.
 
-Get tickets
+POST   /api/projects
+GET    /api/projects
+GET    /api/projects/:id
+PUT    /api/projects/:id
+DELETE /api/projects/:id
 
-Get ticket by ID
+🎫 Ticket Management
 
-Update ticket
+Complete Ticket CRUD is implemented.
 
-Delete ticket
+POST   /api/tickets
+GET    /api/tickets
+GET    /api/tickets/:id
+PUT    /api/tickets/:id
+DELETE /api/tickets/:id
 
-Assign ticket to user
+Assign Ticket
 
-Status workflow
+PATCH /api/tickets/:id/assign
 
-🔐 Roles & Permissions
+The system checks that both the ticket and user exist before assigning the ticket.
 
-Create/list permissions
+🔄 Ticket Status Workflow
 
-Role management
+Tickets cannot randomly move between statuses.
 
-Assign permissions to roles
+Current Status
 
-Assign roles to users
+Allowed Status
 
-Permission-based route protection
+Ready to Do
 
-🖼️ Attachments
+In Progress, Blocked
 
-Upload image
+In Progress
 
-Store image in MinIO
+Ready to Do, Blocked, Testing
 
-Store attachment metadata in MySQL
+Blocked
 
-Retrieve ticket attachments
+In Progress
 
-🛠️ Tech Stack
+Testing
 
-Technology
+Done, In Progress
 
-Purpose
+Done
 
-🟢 Node.js
+In Progress
 
-Backend runtime
+Invalid transitions are rejected by the ticket service.
 
-⚡ Express.js
+Ready to Do → Testing   ❌
+In Progress → Done      ❌
+Blocked → Testing       ❌
 
-REST API framework
+🖼️ Ticket Image Attachments
 
-🔷 JavaScript
+Images are handled using Multer + MinIO.
 
-Backend development
+Image
+  ↓
+Multer
+  ↓
+File Buffer
+  ↓
+MinIO
+  ↓
+File URL
+  ↓
+MySQL Attachment Metadata
 
-🔺 Prisma
+MinIO stores the actual uploaded file, while MySQL stores the attachment metadata.
 
-ORM / database access
+📖 API Documentation
 
-🐬 MySQL
+Swagger / OpenAPI is included for API documentation and testing.
 
-Relational database
+http://localhost:3000/api-docs
 
-🔐 JWT
+Main APIs
 
-Authentication
+POST   /api/auth/signup
+POST   /api/auth/login
 
-🔒 bcrypt
+POST   /api/projects
+GET    /api/projects
+GET    /api/projects/:id
+PUT    /api/projects/:id
+DELETE /api/projects/:id
 
-Password hashing
+POST   /api/tickets
+GET    /api/tickets
+GET    /api/tickets/:id
+PUT    /api/tickets/:id
+DELETE /api/tickets/:id
 
-📦 Multer
+PATCH  /api/tickets/:id/assign
 
-File upload handling
+POST   /api/tickets/:ticketId/attachments
+GET    /api/tickets/:ticketId/attachments
 
-☁️ MinIO
+🚀 Installation
 
-Object/file storage
-
-📚 Swagger
-
-API documentation
-
-🧪 Thunder Client
-
-API testing
-
-🌿 Git & GitHub
-
-Version control
-
-🚀 Getting Started
-
-1️⃣ Clone the Repository
+Clone Repository
 
 git clone https://github.com/saadi-001/Task-Management-System-2.0.git
 cd Task-Management-System-2.0
 
-2️⃣ Install Dependencies
+Install Dependencies
 
 npm install
 
-3️⃣ Configure .env
+Generate Prisma Client
 
-Example:
+npx prisma generate
+
+Configure .env
 
 DATABASE_URL="mysql://USER:PASSWORD@localhost:3306/DATABASE_NAME"
-
 JWT_SECRET="your_secret"
 
 MINIO_ENDPOINT="localhost"
@@ -408,130 +306,34 @@ MINIO_ACCESS_KEY="your_access_key"
 MINIO_SECRET_KEY="your_secret_key"
 MINIO_BUCKET="task-management"
 
-⚠️ Never commit real passwords, API keys or secrets to GitHub.
-
-4️⃣ Generate Prisma Client
-
-npx prisma generate
-
-5️⃣ Start the Backend
+Start Server
 
 npm run dev
 
-🗄️ Database
+⚠️ Never commit real passwords, API keys or secrets to GitHub.
 
-The project uses MySQL with Prisma.
+🧪 Testing
 
-Main Models
+Valid Workflow
 
-user
-organization
-organizationmembers
-project
-projectmembers
-task
-comment
-attachment
-activityhistory
-permission
-role
-rolepermission
-userrole
+Ready to Do → In Progress   ✅
+Ready to Do → Blocked       ✅
+Blocked → In Progress       ✅
+In Progress → Testing       ✅
+Testing → Done              ✅
+Testing → In Progress       ✅
+Done → In Progress          ✅
 
-📚 API Overview
+Invalid Workflow
 
-🔐 Auth
+Ready to Do → Testing       ❌
+In Progress → Done          ❌
+Blocked → Testing            ❌
 
-POST /api/auth/signup
-POST /api/auth/login
+👨‍💻 Author
 
-🏢 Organizations
+Muhammad Saad
 
-/api/organizations
+BS Software Engineering
 
-📁 Projects
-
-POST   /api/projects
-GET    /api/projects
-GET    /api/projects/:id
-PUT    /api/projects/:id
-DELETE /api/projects/:id
-
-🎫 Tickets
-
-POST   /api/tickets
-GET    /api/tickets
-GET    /api/tickets/:id
-PUT    /api/tickets/:id
-DELETE /api/tickets/:id
-
-👤 Ticket Assignment
-
-PATCH /api/tickets/:id/assign
-
-🖼️ Ticket Attachments
-
-POST /api/tickets/:ticketId/attachments
-GET  /api/tickets/:ticketId/attachments
-
-📖 Swagger
-
-Swagger/OpenAPI is included in the project for API documentation and testing.
-
-Start the server and open the configured Swagger endpoint from swagger.js.
-
-🧪 Workflow Testing
-
-The ticket workflow has been tested for both valid and invalid transitions.
-
-✅ Valid Transitions
-
-Ready to Do → In Progress
-Ready to Do → Blocked
-In Progress → Ready to Do
-In Progress → Blocked
-In Progress → Testing
-Blocked → In Progress
-Testing → Done
-Testing → In Progress
-Done → In Progress
-
-❌ Correctly Rejected
-
-Ready to Do → Testing
-In Progress → Done
-Blocked → Testing
-
-🧠 Quick Revision
-
-AUTH
-Signup → bcrypt → MySQL
-Login → bcrypt.compare → JWT
-JWT → authMiddleware → req.user
-
-RBAC
-User → Role → Permission → Allow / 403
-
-PROJECT
-Route → Controller → Service → Repository → Prisma → MySQL
-
-TICKET
-CRUD → Assignment → Status Workflow
-
-ATTACHMENT
-Multer → Buffer → MinIO → FileUrl → MySQL
-
-GIT
-git status → git add → git commit → git push
-
-👨‍💻 Project
-
-Task Management System 2.0
-
-Built as a backend project with a focus on:
-
-Clean Architecture • Separation of Concerns • Authentication • Authorization • File Storage • Business Rules
-
-🔗 Repository
-
-GitHub Repository
+⭐ If you found this project useful, consider giving it a star.
