@@ -112,7 +112,7 @@ MySQL Attachment Metadata
 
 🟨 Authentication
 
-Signup
+🔐 Signup
 
 User Password
      ↓
@@ -124,7 +124,7 @@ MySQL
 
 The original plain password is not stored in the database.
 
-Login
+🔑 Login
 
 Email + Password
        ↓
@@ -136,7 +136,7 @@ Generate JWT
        ↓
 Return Token
 
-Protected Request
+🛡️ Protected Request
 
 Authorization: Bearer <JWT>
              ↓
@@ -148,7 +148,7 @@ Authorization: Bearer <JWT>
 
 🟥 RBAC
 
-The project uses Role Based Access Control.
+The project uses Role Based Access Control (RBAC).
 
 User
  ↓
@@ -172,7 +172,7 @@ Available Statuses
 
 Ready to Do • In Progress • Blocked • Testing • Done
 
-Allowed Transitions
+✅ Allowed Transitions
 
 Ready to Do
  ├──→ In Progress
@@ -190,7 +190,7 @@ Testing
 Done
  └──→ In Progress
 
-🚫 Examples of blocked transitions
+🚫 Examples of Blocked Transitions
 
 Ready to Do → Testing   ❌
 In Progress → Done      ❌
@@ -216,9 +216,17 @@ MySQL attachment table
 
 Storage Responsibility
 
-☁️ MinIO → stores the actual uploaded file
+Storage
 
-🗄️ MySQL → stores FileName, FileUrl, TaskID and attachment metadata
+Responsibility
+
+☁️ MinIO
+
+Stores the actual uploaded file
+
+🗄️ MySQL
+
+Stores FileName, FileUrl, TaskID and attachment metadata
 
 📁 Project Structure
 
@@ -376,16 +384,16 @@ Version control
 
 🚀 Getting Started
 
-1. Clone the repository
+1️⃣ Clone the Repository
 
 git clone https://github.com/saadi-001/Task-Management-System-2.0.git
 cd Task-Management-System-2.0
 
-2. Install dependencies
+2️⃣ Install Dependencies
 
 npm install
 
-3. Configure .env
+3️⃣ Configure .env
 
 Example:
 
@@ -402,11 +410,11 @@ MINIO_BUCKET="task-management"
 
 ⚠️ Never commit real passwords, API keys or secrets to GitHub.
 
-4. Generate Prisma Client
+4️⃣ Generate Prisma Client
 
 npx prisma generate
 
-5. Start the backend
+5️⃣ Start the Backend
 
 npm run dev
 
@@ -414,7 +422,7 @@ npm run dev
 
 The project uses MySQL with Prisma.
 
-Main models include:
+Main Models
 
 user
 organization
@@ -476,7 +484,7 @@ Start the server and open the configured Swagger endpoint from swagger.js.
 
 The ticket workflow has been tested for both valid and invalid transitions.
 
-✅ Valid
+✅ Valid Transitions
 
 Ready to Do → In Progress
 Ready to Do → Blocked
@@ -522,8 +530,8 @@ Task Management System 2.0
 
 Built as a backend project with a focus on:
 
-Clean architecture • Separation of concerns • Authentication • Authorization • File storage • Business rules
+Clean Architecture • Separation of Concerns • Authentication • Authorization • File Storage • Business Rules
 
 🔗 Repository
 
-https://github.com/saadi-001/Task-Management-System-2.0
+GitHub Repository
