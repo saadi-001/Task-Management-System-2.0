@@ -1,0 +1,129 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model user {
+  UserID      Int      @id @default(autoincrement())
+  Name        String
+  Email       String   @unique(map: "User_Email_key")
+  Password    String
+  DateOfBirth DateTime
+}
+
+model organization {
+  OrganizationID Int     @id @default(autoincrement())
+  Name           String
+  Email          String  @unique(map: "Organization_Email_key")
+  ContactNo      String
+  Logo           String?
+  Theme          String?
+  OwnerID        Int?
+
+  @@index([OwnerID], map: "Organization_OwnerID_fkey")
+}
+
+model organizationmembers {
+  OrganizationMemberID Int    @id @default(autoincrement())
+  OrganizationID       Int
+  UserID               Int
+  Role                 String
+
+  @@index([OrganizationID], map: "OrganizationMembers_OrganizationID_fkey")
+  @@index([UserID], map: "OrganizationMembers_UserID_fkey")
+}
+
+model project {
+  ProjectID      Int     @id @default(autoincrement())
+  Name           String
+  Description    String?
+  OrganizationID Int
+  OwnerID        Int
+
+  @@index([OrganizationID], map: "Project_OrganizationID_fkey")
+  @@index([OwnerID], map: "Project_OwnerID_fkey")
+}
+
+model projectmembers {
+  ProjectMemberID Int    @id @default(autoincrement())
+  ProjectID       Int
+  UserID          Int
+  Role            String
+
+  @@index([ProjectID], map: "ProjectMembers_ProjectID_fkey")
+  @@index([UserID], map: "ProjectMembers_UserID_fkey")
+}
+
+model task {
+  TaskID      Int     @id @default(autoincrement())
+  Title       String
+  Description String?
+  Status      String
+  Priority    String
+  ProjectID   Int
+  AssignedTo  Int
+
+  @@index([AssignedTo], map: "Task_AssignedTo_fkey")
+  @@index([ProjectID], map: "Task_ProjectID_fkey")
+}
+
+model comment {
+  CommentID Int    @id @default(autoincrement())
+  Message   String
+  TaskID    Int
+  UserID    Int
+
+  @@index([TaskID], map: "Comment_TaskID_fkey")
+  @@index([UserID], map: "Comment_UserID_fkey")
+}
+
+model attachment {
+  AttachmentID Int    @id @default(autoincrement())
+  FileName     String
+  FileUrl      String
+  TaskID       Int
+
+  @@index([TaskID], map: "Attachment_TaskID_fkey")
+}
+
+model activityhistory {
+  ActivityID Int    @id @default(autoincrement())
+  Action     String
+  TaskID     Int
+  UserID     Int
+
+  @@index([TaskID], map: "ActivityHistory_TaskID_fkey")
+  @@index([UserID], map: "ActivityHistory_UserID_fkey")
+}
+
+model permission {
+  PermissionID Int    @id @default(autoincrement())
+  Name         String @unique(map: "Permission_Name_key")
+}
+
+model role {
+  RoleID Int    @id @default(autoincrement())
+  Name   String @unique(map: "Role_Name_key")
+}
+
+model rolepermission {
+  RolePermissionID Int @id @default(autoincrement())
+  RoleID           Int
+  PermissionID     Int
+
+  @@unique([RoleID, PermissionID], map: "RolePermission_RoleID_PermissionID_key")
+  @@index([PermissionID], map: "RolePermission_PermissionID_fkey")
+}
+
+model userrole {
+  UserRoleID Int @id @default(autoincrement())
+  UserID     Int
+  RoleID     Int
+
+  @@unique([UserID, RoleID], map: "UserRole_UserID_RoleID_key")
+  @@index([RoleID], map: "UserRole_RoleID_fkey")
+}
