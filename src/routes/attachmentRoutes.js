@@ -7,7 +7,47 @@ const authMiddleware = require("../middlewares/authMiddleware");
 const upload = require("../middlewares/uploadMiddleware");
 
 
-// Upload Image to Ticket
+/**
+ * @swagger
+ * tags:
+ *   name: Attachments
+ *   description: Ticket Image Attachment APIs
+ */
+
+
+/**
+ * @swagger
+ * /api/tickets/{ticketId}/attachments:
+ *   post:
+ *     summary: Upload image to a ticket
+ *     tags: [Attachments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: ticketId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         example: 5
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - image
+ *             properties:
+ *               image:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       201:
+ *         description: Image uploaded successfully
+ *       400:
+ *         description: No file uploaded
+ */
 router.post(
     "/:ticketId/attachments",
     authMiddleware,
@@ -16,7 +56,27 @@ router.post(
 );
 
 
-// Get Ticket Attachments
+/**
+ * @swagger
+ * /api/tickets/{ticketId}/attachments:
+ *   get:
+ *     summary: Get ticket attachments
+ *     tags: [Attachments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: ticketId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         example: 5
+ *     responses:
+ *       200:
+ *         description: Ticket attachments retrieved successfully
+ *       404:
+ *         description: Ticket not found
+ */
 router.get(
     "/:ticketId/attachments",
     authMiddleware,
