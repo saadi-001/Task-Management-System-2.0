@@ -12,7 +12,7 @@ model user {
   Name        String
   Email       String   @unique(map: "User_Email_key")
   Password    String
-  DateOfBirth DateTime
+  DateOfBirth DateTime?
 }
 
 model organization {

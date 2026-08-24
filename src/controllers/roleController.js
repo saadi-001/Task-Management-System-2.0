@@ -26,11 +26,11 @@ const createRole = async (req, res) => {
         });
 
     } catch (error) {
-        console.error(error);
+        console.error("Create Role Error:", error);
 
-        res.status(500).json({
+        res.status(error.statusCode || 500).json({
             success: false,
-            message: "Failed to create role"
+            message: error.message || "Failed to create role"
         });
     }
 };
@@ -49,11 +49,11 @@ const getRoles = async (req, res) => {
         });
 
     } catch (error) {
-        console.error(error);
+        console.error("Get Roles Error:", error);
 
-        res.status(500).json({
+        res.status(error.statusCode || 500).json({
             success: false,
-            message: "Failed to fetch roles"
+            message: error.message || "Failed to fetch roles"
         });
     }
 };
@@ -81,11 +81,11 @@ const getRoleById = async (req, res) => {
         });
 
     } catch (error) {
-        console.error(error);
+        console.error("Get Role Error:", error);
 
-        res.status(500).json({
+        res.status(error.statusCode || 500).json({
             success: false,
-            message: "Failed to fetch role"
+            message: error.message || "Failed to fetch role"
         });
     }
 };
@@ -118,11 +118,11 @@ const updateRole = async (req, res) => {
         });
 
     } catch (error) {
-        console.error(error);
+        console.error("Update Role Error:", error);
 
-        res.status(500).json({
+        res.status(error.statusCode || 500).json({
             success: false,
-            message: "Failed to update role"
+            message: error.message || "Failed to update role"
         });
     }
 };
@@ -143,11 +143,11 @@ const deleteRole = async (req, res) => {
         });
 
     } catch (error) {
-        console.error(error);
+        console.error("Delete Role Error:", error);
 
-        res.status(500).json({
+        res.status(error.statusCode || 500).json({
             success: false,
-            message: "Failed to delete role"
+            message: error.message || "Failed to delete role"
         });
     }
 };
@@ -164,7 +164,6 @@ const assignPermissionToRole = async (req, res) => {
             permissionName
         } = req.body;
 
-        // Validation
         if (!roleId || !permissionName) {
             return res.status(400).json({
                 success: false,
@@ -184,14 +183,12 @@ const assignPermissionToRole = async (req, res) => {
         });
 
     } catch (error) {
+        console.error("Assign Permission Error:", error);
 
-        console.error(error);
-
-        res.status(500).json({
+        res.status(error.statusCode || 500).json({
             success: false,
             message: error.message || "Failed to assign permission to role"
         });
-
     }
 };
 
@@ -201,6 +198,7 @@ const assignPermissionToRole = async (req, res) => {
 // ==============================
 const removePermissionFromRole = async (req, res) => {
     try {
+
         const {
             roleId,
             permissionId
@@ -225,11 +223,11 @@ const removePermissionFromRole = async (req, res) => {
         });
 
     } catch (error) {
-        console.error(error);
+        console.error("Remove Permission Error:", error);
 
-        res.status(500).json({
+        res.status(error.statusCode || 500).json({
             success: false,
-            message: "Failed to remove permission from role"
+            message: error.message || "Failed to remove permission from role"
         });
     }
 };
@@ -240,6 +238,7 @@ const removePermissionFromRole = async (req, res) => {
 // ==============================
 const getRolePermissions = async (req, res) => {
     try {
+
         const roleId = Number(req.params.roleId);
 
         const permissions =
@@ -251,11 +250,11 @@ const getRolePermissions = async (req, res) => {
         });
 
     } catch (error) {
-        console.error(error);
+        console.error("Get Role Permissions Error:", error);
 
-        res.status(500).json({
+        res.status(error.statusCode || 500).json({
             success: false,
-            message: "Failed to fetch role permissions"
+            message: error.message || "Failed to fetch role permissions"
         });
     }
 };
@@ -266,6 +265,7 @@ const getRolePermissions = async (req, res) => {
 // ==============================
 const assignRoleToUser = async (req, res) => {
     try {
+
         const {
             userId,
             roleId
@@ -284,11 +284,11 @@ const assignRoleToUser = async (req, res) => {
         });
 
     } catch (error) {
-        console.error(error);
+        console.error("Assign Role Error:", error);
 
-        res.status(500).json({
+        res.status(error.statusCode || 500).json({
             success: false,
-            message: "Failed to assign role to user"
+            message: error.message || "Failed to assign role to user"
         });
     }
 };
@@ -299,6 +299,7 @@ const assignRoleToUser = async (req, res) => {
 // ==============================
 const removeRoleFromUser = async (req, res) => {
     try {
+
         const {
             userId,
             roleId
@@ -323,11 +324,11 @@ const removeRoleFromUser = async (req, res) => {
         });
 
     } catch (error) {
-        console.error(error);
+        console.error("Remove Role Error:", error);
 
-        res.status(500).json({
+        res.status(error.statusCode || 500).json({
             success: false,
-            message: "Failed to remove role from user"
+            message: error.message || "Failed to remove role from user"
         });
     }
 };
@@ -338,6 +339,7 @@ const removeRoleFromUser = async (req, res) => {
 // ==============================
 const getUserRoles = async (req, res) => {
     try {
+
         const userId = Number(req.params.userId);
 
         const roles =
@@ -349,11 +351,11 @@ const getUserRoles = async (req, res) => {
         });
 
     } catch (error) {
-        console.error(error);
+        console.error("Get User Roles Error:", error);
 
-        res.status(500).json({
+        res.status(error.statusCode || 500).json({
             success: false,
-            message: "Failed to fetch user roles"
+            message: error.message || "Failed to fetch user roles"
         });
     }
 };

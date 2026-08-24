@@ -5,6 +5,23 @@ const organizationRepository = require("../repositories/organizationRepository")
 // Create Organization
 // ==============================
 const createOrganization = async (organizationData) => {
+
+    // Check if organization email already exists
+    const existingOrganization =
+        await organizationRepository.getOrganizationByEmail(
+            organizationData.email
+        );
+
+    if (existingOrganization) {
+        const error = new Error(
+            "Organization email already exists"
+        );
+
+        error.statusCode = 409;
+
+        throw error;
+    }
+
     return await organizationRepository.createOrganization(
         organizationData
     );
@@ -15,7 +32,9 @@ const createOrganization = async (organizationData) => {
 // Get All Organizations
 // ==============================
 const getOrganizations = async () => {
+
     return await organizationRepository.getOrganizations();
+
 };
 
 
@@ -23,7 +42,9 @@ const getOrganizations = async () => {
 // Get Organization By ID
 // ==============================
 const getOrganizationById = async (id) => {
+
     return await organizationRepository.getOrganizationById(id);
+
 };
 
 
@@ -31,10 +52,12 @@ const getOrganizationById = async (id) => {
 // Update Organization
 // ==============================
 const updateOrganization = async (id, organizationData) => {
+
     return await organizationRepository.updateOrganization(
         id,
         organizationData
     );
+
 };
 
 
@@ -42,7 +65,9 @@ const updateOrganization = async (id, organizationData) => {
 // Delete Organization
 // ==============================
 const deleteOrganization = async (id) => {
+
     return await organizationRepository.deleteOrganization(id);
+
 };
 
 
@@ -54,11 +79,13 @@ const assignUserToOrganization = async (
     userId,
     role
 ) => {
+
     return await organizationRepository.assignUserToOrganization(
         organizationId,
         userId,
         role
     );
+
 };
 
 
@@ -69,10 +96,12 @@ const removeUserFromOrganization = async (
     organizationId,
     userId
 ) => {
+
     return await organizationRepository.removeUserFromOrganization(
         organizationId,
         userId
     );
+
 };
 
 
@@ -83,10 +112,12 @@ const transferOrganizationOwner = async (
     organizationId,
     newOwnerId
 ) => {
+
     return await organizationRepository.transferOrganizationOwner(
         organizationId,
         newOwnerId
     );
+
 };
 
 
@@ -94,6 +125,7 @@ const transferOrganizationOwner = async (
 // Export
 // ==============================
 module.exports = {
+
     createOrganization,
     getOrganizations,
     getOrganizationById,
@@ -102,4 +134,5 @@ module.exports = {
     assignUserToOrganization,
     removeUserFromOrganization,
     transferOrganizationOwner
+
 };

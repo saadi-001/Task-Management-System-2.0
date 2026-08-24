@@ -32,11 +32,11 @@ const createOrganization = async (req, res) => {
         });
 
     } catch (error) {
-        console.error(error);
+        console.error("Create Organization Error:", error);
 
-        res.status(500).json({
+        res.status(error.statusCode || 500).json({
             success: false,
-            message: "Failed to create organization"
+            message: error.message || "Failed to create organization"
         });
     }
 };
@@ -56,11 +56,11 @@ const getOrganizations = async (req, res) => {
         });
 
     } catch (error) {
-        console.error(error);
+        console.error("Get Organizations Error:", error);
 
-        res.status(500).json({
+        res.status(error.statusCode || 500).json({
             success: false,
-            message: "Failed to fetch organizations"
+            message: error.message || "Failed to fetch organizations"
         });
     }
 };
@@ -89,11 +89,11 @@ const getOrganizationById = async (req, res) => {
         });
 
     } catch (error) {
-        console.error(error);
+        console.error("Get Organization Error:", error);
 
-        res.status(500).json({
+        res.status(error.statusCode || 500).json({
             success: false,
-            message: "Failed to fetch organization"
+            message: error.message || "Failed to fetch organization"
         });
     }
 };
@@ -133,11 +133,11 @@ const updateOrganization = async (req, res) => {
         });
 
     } catch (error) {
-        console.error(error);
+        console.error("Update Organization Error:", error);
 
-        res.status(500).json({
+        res.status(error.statusCode || 500).json({
             success: false,
-            message: "Failed to update organization"
+            message: error.message || "Failed to update organization"
         });
     }
 };
@@ -158,11 +158,11 @@ const deleteOrganization = async (req, res) => {
         });
 
     } catch (error) {
-        console.error(error);
+        console.error("Delete Organization Error:", error);
 
-        res.status(500).json({
+        res.status(error.statusCode || 500).json({
             success: false,
-            message: "Failed to delete organization"
+            message: error.message || "Failed to delete organization"
         });
     }
 };
@@ -193,11 +193,11 @@ const assignUserToOrganization = async (req, res) => {
         });
 
     } catch (error) {
-        console.error(error);
+        console.error("Assign User Error:", error);
 
-        res.status(500).json({
+        res.status(error.statusCode || 500).json({
             success: false,
-            message: "Failed to assign user to organization"
+            message: error.message || "Failed to assign user to organization"
         });
     }
 };
@@ -232,11 +232,11 @@ const removeUserFromOrganization = async (req, res) => {
         });
 
     } catch (error) {
-        console.error(error);
+        console.error("Remove User Error:", error);
 
-        res.status(500).json({
+        res.status(error.statusCode || 500).json({
             success: false,
-            message: "Failed to remove user from organization"
+            message: error.message || "Failed to remove user from organization"
         });
     }
 };
@@ -265,11 +265,11 @@ const transferOrganizationOwner = async (req, res) => {
         });
 
     } catch (error) {
-        console.error(error);
+        console.error("Transfer Organization Owner Error:", error);
 
-        res.status(500).json({
+        res.status(error.statusCode || 500).json({
             success: false,
-            message: "Failed to transfer organization owner"
+            message: error.message || "Failed to transfer organization owner"
         });
     }
 };

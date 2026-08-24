@@ -7,6 +7,7 @@ const permissionRoutes = require("./permissionRoutes");
 const projectRoutes = require("./projectRoutes");
 const ticketRoutes = require("./ticketRoutes");
 const attachmentRoutes = require("./attachmentRoutes");
+const userRoutes = require("./userRoutes");
 
 
 const router = express.Router();
@@ -83,5 +84,15 @@ router.use(
     "/tickets",
     attachmentRoutes
 );
+
+
+// ==============================
+// User Routes
+// ==============================
+router.use(
+    "/users",
+    userRoutes
+);
+
 
 module.exports = router;

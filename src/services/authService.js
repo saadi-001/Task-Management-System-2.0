@@ -3,9 +3,6 @@ const bcrypt = require("bcrypt");
 const authRepository = require("../repositories/authRepository");
 const { generateToken } = require("../utils/jwt");
 
-// ==========================
-// Signup
-// ==========================
 const signup = async (userData) => {
 
     // Check if email already exists
@@ -25,17 +22,12 @@ const signup = async (userData) => {
         10
     );
 
-    // Replace plain password
-    userData.password = hashedPassword;
-
     // Save User
     return await authRepository.createUser({
         Name: userData.name,
         Email: userData.email,
-        Password: userData.password,
-        DateOfBirth: new Date(userData.dateOfBirth)
+        Password: hashedPassword,
     });
-
 };
 
 // ==========================
