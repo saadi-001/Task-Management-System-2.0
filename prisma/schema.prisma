@@ -7,13 +7,25 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+
+// ==============================
+// User
+// ==============================
+
 model user {
   UserID      Int      @id @default(autoincrement())
   Name        String
   Email       String   @unique(map: "User_Email_key")
   Password    String
   DateOfBirth DateTime?
+
+  @@map("user")
 }
+
+
+// ==============================
+// Organization
+// ==============================
 
 model organization {
   OrganizationID Int     @id @default(autoincrement())
@@ -25,7 +37,14 @@ model organization {
   OwnerID        Int?
 
   @@index([OwnerID], map: "Organization_OwnerID_fkey")
+
+  @@map("organization")
 }
+
+
+// ==============================
+// Organization Members
+// ==============================
 
 model organizationmembers {
   OrganizationMemberID Int    @id @default(autoincrement())
@@ -35,7 +54,14 @@ model organizationmembers {
 
   @@index([OrganizationID], map: "OrganizationMembers_OrganizationID_fkey")
   @@index([UserID], map: "OrganizationMembers_UserID_fkey")
+
+  @@map("organizationMembers")
 }
+
+
+// ==============================
+// Project
+// ==============================
 
 model project {
   ProjectID      Int     @id @default(autoincrement())
@@ -46,7 +72,14 @@ model project {
 
   @@index([OrganizationID], map: "Project_OrganizationID_fkey")
   @@index([OwnerID], map: "Project_OwnerID_fkey")
+
+  @@map("project")
 }
+
+
+// ==============================
+// Project Members
+// ==============================
 
 model projectmembers {
   ProjectMemberID Int    @id @default(autoincrement())
@@ -56,7 +89,14 @@ model projectmembers {
 
   @@index([ProjectID], map: "ProjectMembers_ProjectID_fkey")
   @@index([UserID], map: "ProjectMembers_UserID_fkey")
+
+  @@map("projectMembers")
 }
+
+
+// ==============================
+// Task
+// ==============================
 
 model task {
   TaskID      Int     @id @default(autoincrement())
@@ -69,7 +109,14 @@ model task {
 
   @@index([AssignedTo], map: "Task_AssignedTo_fkey")
   @@index([ProjectID], map: "Task_ProjectID_fkey")
+
+  @@map("task")
 }
+
+
+// ==============================
+// Comment
+// ==============================
 
 model comment {
   CommentID Int    @id @default(autoincrement())
@@ -79,7 +126,14 @@ model comment {
 
   @@index([TaskID], map: "Comment_TaskID_fkey")
   @@index([UserID], map: "Comment_UserID_fkey")
+
+  @@map("comment")
 }
+
+
+// ==============================
+// Attachment
+// ==============================
 
 model attachment {
   AttachmentID Int    @id @default(autoincrement())
@@ -88,7 +142,14 @@ model attachment {
   TaskID       Int
 
   @@index([TaskID], map: "Attachment_TaskID_fkey")
+
+  @@map("attachment")
 }
+
+
+// ==============================
+// Activity History
+// ==============================
 
 model activityhistory {
   ActivityID Int    @id @default(autoincrement())
@@ -98,17 +159,34 @@ model activityhistory {
 
   @@index([TaskID], map: "ActivityHistory_TaskID_fkey")
   @@index([UserID], map: "ActivityHistory_UserID_fkey")
+
+  @@map("activityHistory")
 }
+
+
+// ==============================
+// Permission
+// ==============================
 
 model permission {
   PermissionID Int    @id @default(autoincrement())
   Name         String @unique(map: "Permission_Name_key")
 }
 
+
+// ==============================
+// Role
+// ==============================
+
 model role {
   RoleID Int    @id @default(autoincrement())
   Name   String @unique(map: "Role_Name_key")
 }
+
+
+// ==============================
+// Role Permission
+// ==============================
 
 model rolepermission {
   RolePermissionID Int @id @default(autoincrement())
@@ -118,6 +196,11 @@ model rolepermission {
   @@unique([RoleID, PermissionID], map: "RolePermission_RoleID_PermissionID_key")
   @@index([PermissionID], map: "RolePermission_PermissionID_fkey")
 }
+
+
+// ==============================
+// User Role
+// ==============================
 
 model userrole {
   UserRoleID Int @id @default(autoincrement())

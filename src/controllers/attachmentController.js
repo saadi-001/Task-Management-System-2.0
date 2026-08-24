@@ -3,17 +3,28 @@ const attachmentService = require("../services/attachmentService");
 // Upload Attachment
 const uploadAttachment = async (req, res) => {
     try {
-        if (!req.file) {
+        const { fileName, fileType, fileData } = req.body;
+
+        if (!fileName || !fileType || !fileData) {
             return res.status(400).json({
                 success: false,
-                message: "No file uploaded",
+                message: "fileName, fileType and fileData are required",
             });
         }
 
         const ticketId = Number(req.params.ticketId);
 
+        // Convert Base64 string into Buffer
+        const fileBuffer = Buffer.from(fileData, "base64");
+
+        const file = {
+            originalname: fileName,
+            mimetype: fileType,
+            buffer: fileBuffer,
+        };
+
         const attachment = await attachmentService.createAttachment(
-            req.file,
+            file,
             ticketId
         );
 
@@ -32,6 +43,7 @@ const uploadAttachment = async (req, res) => {
         });
     }
 };
+
 
 // Get Ticket Attachments
 const getTicketAttachments = async (req, res) => {
@@ -55,6 +67,7 @@ const getTicketAttachments = async (req, res) => {
         });
     }
 };
+
 
 module.exports = {
     uploadAttachment,
