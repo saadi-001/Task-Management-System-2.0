@@ -55,7 +55,7 @@ model organizationmembers {
   @@index([OrganizationID], map: "OrganizationMembers_OrganizationID_fkey")
   @@index([UserID], map: "OrganizationMembers_UserID_fkey")
 
-  @@map("organizationMembers")
+  @@map("organizationmembers")
 }
 
 
