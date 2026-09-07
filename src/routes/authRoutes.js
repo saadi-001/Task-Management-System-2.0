@@ -3,10 +3,11 @@ const express = require("express");
 const {
     signup,
     login,
+    forgotPassword,
+    resetPassword,
 } = require("../controllers/authController");
 
 const router = express.Router();
-
 /**
  * @swagger
  * tags:
@@ -77,5 +78,70 @@ router.post("/signup", signup);
  *         description: Invalid credentials
  */
 router.post("/login", login);
+
+// ==========================
+// Forgot Password
+// ==========================
+
+/**
+ * @swagger
+ * /api/auth/forgot-password:
+ *   post:
+ *     summary: Generate password reset token
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: saad@gmail.com
+ *     responses:
+ *       200:
+ *         description: Password reset token generated
+ *       404:
+ *         description: User not found
+ */
+router.post("/forgot-password", forgotPassword);
+
+
+// ==========================
+// Reset Password
+// ==========================
+
+/**
+ * @swagger
+ * /api/auth/reset-password:
+ *   post:
+ *     summary: Reset user password
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - resetToken
+ *               - newPassword
+ *             properties:
+ *               resetToken:
+ *                 type: string
+ *                 example: 8a9f7c6d5e4b3a2f
+ *               newPassword:
+ *                 type: string
+ *                 example: NewPassword123
+ *     responses:
+ *       200:
+ *         description: Password reset successfully
+ *       400:
+ *         description: Invalid or expired reset token
+ */
+router.post("/reset-password", resetPassword);
 
 module.exports = router;

@@ -18,7 +18,28 @@ app.get("/", (req, res) => {
     });
 });
 
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use(
+    "/api-docs",
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerSpec, {
+        swaggerOptions: {
+            tagsSorter: (a, b) => {
+                const order = [
+                    "Authentication",
+                    "Users",
+                    "Roles",
+                    "Permissions",
+                    "Organization",
+                    "Projects",
+                    "Tickets",
+                    "Attachments"
+                ];
+
+                return order.indexOf(a) - order.indexOf(b);
+            }
+        }
+    })
+);
 
 app.use("/api", routes);
 

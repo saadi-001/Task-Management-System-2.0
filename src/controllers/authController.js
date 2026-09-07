@@ -69,7 +69,72 @@ const login = async (req, res) => {
 
 };
 
+// ==========================
+// Forgot Password
+// ==========================
+const forgotPassword = async (req, res) => {
+
+    try {
+
+        const { email } = req.body;
+
+        const result = await authService.forgotPassword(email);
+
+        res.status(200).json({
+            success: true,
+            message: "Password reset token generated",
+            data: result,
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(error.statusCode || 500).json({
+            success: false,
+            message: error.message,
+        });
+
+    }
+
+};
+
+
+// ==========================
+// Reset Password
+// ==========================
+const resetPassword = async (req, res) => {
+
+    try {
+
+        const { resetToken, newPassword } = req.body;
+
+        const result = await authService.resetPassword(
+            resetToken,
+            newPassword
+        );
+
+        res.status(200).json({
+            success: true,
+            message: result.message,
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(error.statusCode || 500).json({
+            success: false,
+            message: error.message,
+        });
+
+    }
+
+};
+
 module.exports = {
     signup,
     login,
+    forgotPassword,
+    resetPassword,
 };

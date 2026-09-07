@@ -4,6 +4,7 @@ const router = express.Router();
 
 const projectController = require("../controllers/projectController");
 const authMiddleware = require("../middlewares/authMiddleware");
+const authorize = require("../middlewares/permissionMiddleware");
 
 
 /**
@@ -22,28 +23,11 @@ const authMiddleware = require("../middlewares/authMiddleware");
  *     tags: [Projects]
  *     security:
  *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               Name:
- *                 type: string
- *                 example: Website Project
- *               Description:
- *                 type: string
- *                 example: Project description
- *     responses:
- *       201:
- *         description: Project created successfully
- *       400:
- *         description: Bad request
  */
 router.post(
     "/",
     authMiddleware,
+    authorize("CREATE_PROJECT"),
     projectController.createProject
 );
 
@@ -56,13 +40,11 @@ router.post(
  *     tags: [Projects]
  *     security:
  *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Projects retrieved successfully
  */
 router.get(
     "/",
     authMiddleware,
+    authorize("VIEW_PROJECT"),
     projectController.getAllProjects
 );
 
@@ -75,22 +57,11 @@ router.get(
  *     tags: [Projects]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *         example: 2
- *     responses:
- *       200:
- *         description: Project retrieved successfully
- *       404:
- *         description: Project not found
  */
 router.get(
     "/:id",
     authMiddleware,
+    authorize("VIEW_PROJECT"),
     projectController.getProjectById
 );
 
@@ -103,35 +74,11 @@ router.get(
  *     tags: [Projects]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *         example: 2
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               Name:
- *                 type: string
- *                 example: Updated Project
- *               Description:
- *                 type: string
- *                 example: Updated description
- *     responses:
- *       200:
- *         description: Project updated successfully
- *       404:
- *         description: Project not found
  */
 router.put(
     "/:id",
     authMiddleware,
+    authorize("UPDATE_PROJECT"),
     projectController.updateProject
 );
 
@@ -144,22 +91,11 @@ router.put(
  *     tags: [Projects]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *         example: 2
- *     responses:
- *       200:
- *         description: Project deleted successfully
- *       404:
- *         description: Project not found
  */
 router.delete(
     "/:id",
     authMiddleware,
+    authorize("DELETE_PROJECT"),
     projectController.deleteProject
 );
 

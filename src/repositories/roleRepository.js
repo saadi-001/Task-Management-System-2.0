@@ -198,6 +198,49 @@ const getRolePermissions = async (roleId) => {
 
 };
 
+// ==============================
+// Get User Permissions
+// ==============================
+const getUserPermissions = async (userId) => {
+
+    const userRoles = await prisma.userrole.findMany({
+        where: {
+            UserID: Number(userId)
+        }
+    });
+
+    const roleIds = userRoles.map(
+        (item) => item.RoleID
+    );
+
+    const rolePermissions = await prisma.rolepermission.findMany({
+        where: {
+            RoleID: {
+                in: roleIds
+            }
+        }
+    });
+
+    const permissionIds = [
+        ...new Set(
+            rolePermissions.map(
+                (item) => item.PermissionID
+            )
+        )
+    ];
+
+    return await prisma.permission.findMany({
+        where: {
+            PermissionID: {
+                in: permissionIds
+            }
+        },
+        orderBy: {
+            PermissionID: "asc"
+        }
+    });
+};
+
 
 // ==============================
 // Export
@@ -215,6 +258,8 @@ module.exports = {
     getRolePermissions,
     assignRoleToUser,
     removeRoleFromUser,
-    getUserRoles
+    getUserRoles,
+    getUserPermissions
+
 
 };

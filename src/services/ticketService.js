@@ -1,5 +1,7 @@
 const ticketRepository = require("../repositories/ticketRepository");
 const authRepository = require("../repositories/authRepository");
+const activityService = require("./activityService");
+
 
 // ==============================
 // Allowed Ticket Status Workflow
@@ -16,9 +18,18 @@ const allowedStatusTransitions = {
 // ==============================
 // Create Ticket
 // ==============================
-async function createTicket(ticketData) {
-    return await ticketRepository.createTicket(ticketData);
-}
+const createTicket = async (ticketData, userId) => {
+
+    const ticket = await ticketRepository.createTicket(ticketData);
+
+    await activityService.createActivity(
+        "Ticket created",
+        ticket.TaskID,
+        userId
+    );
+
+    return ticket;
+};
 
 
 // ==============================
@@ -49,7 +60,7 @@ const getAllTickets = async () => {
 // ==============================
 // Update Ticket
 // ==============================
-const updateTicket = async (ticketId, ticketData) => {
+const updateTicket = async (ticketId, ticketData, userId) => {
 
     // Get existing ticket
     const existingTicket = await getTicketById(ticketId);
@@ -81,20 +92,39 @@ const updateTicket = async (ticketId, ticketData) => {
         }
     }
 
-    return await ticketRepository.updateTicket(
+    // Update ticket
+    const updatedTicket = await ticketRepository.updateTicket(
         ticketId,
         ticketData
     );
+
+    // Create activity history
+    await activityService.createActivity(
+        "Ticket updated",
+        ticketId,
+        userId
+    );
+
+    return updatedTicket;
 };
 
 
 // ==============================
 // Delete Ticket
 // ==============================
-const deleteTicket = async (ticketId) => {
+const deleteTicket = async (ticketId, userId) => {
 
+    // Check if ticket exists
     await getTicketById(ticketId);
 
+    // Save activity BEFORE deleting ticket
+    await activityService.createActivity(
+        "Ticket deleted",
+        ticketId,
+        userId
+    );
+
+    // Delete ticket
     return await ticketRepository.deleteTicket(ticketId);
 };
 
@@ -102,13 +132,19 @@ const deleteTicket = async (ticketId) => {
 // ==============================
 // Assign Ticket To User
 // ==============================
-const assignTicket = async (ticketId, userId) => {
+const assignTicket = async (
+    ticketId,
+    assignedUserId,
+    currentUserId
+) => {
 
     // Check if ticket exists
     await getTicketById(ticketId);
 
-    // Check if user exists
-    const user = await authRepository.findUserById(userId);
+    // Check if assigned user exists
+    const user = await authRepository.findUserById(
+        assignedUserId
+    );
 
     if (!user) {
         const error = new Error("User not found");
@@ -116,11 +152,20 @@ const assignTicket = async (ticketId, userId) => {
         throw error;
     }
 
-    // Assign ticket to user
-    return await ticketRepository.assignTicket(
+    // Assign ticket
+    const ticket = await ticketRepository.assignTicket(
         ticketId,
-        userId
+        assignedUserId
     );
+
+    // Create activity history
+    await activityService.createActivity(
+        `Ticket assigned to user ${assignedUserId}`,
+        ticketId,
+        currentUserId
+    );
+
+    return ticket;
 };
 
 

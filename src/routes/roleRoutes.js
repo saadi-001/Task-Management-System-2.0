@@ -175,6 +175,29 @@ router.delete(
 
 /**
  * @swagger
+ * /api/roles/user/{userId}/permissions:
+ *   get:
+ *     summary: Get all effective permissions assigned to a user
+ *     tags: [Roles]
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         example: 2
+ *     responses:
+ *       200:
+ *         description: User permissions fetched successfully
+ */
+router.get(
+    "/user/:userId/permissions",
+    roleController.getUserPermissions
+);
+
+
+/**
+ * @swagger
  * /api/roles/{roleId}/permissions:
  *   get:
  *     summary: Get all permissions assigned to a role

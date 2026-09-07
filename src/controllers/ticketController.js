@@ -1,9 +1,14 @@
 const ticketService = require("../services/ticketService");
 
+// ==============================
 // Create Ticket
+// ==============================
 const createTicket = async (req, res) => {
     try {
-        const ticket = await ticketService.createTicket(req.body);
+        const ticket = await ticketService.createTicket(
+            req.body,
+            req.user.UserID
+        );
 
         return res.status(201).json({
             success: true,
@@ -20,7 +25,10 @@ const createTicket = async (req, res) => {
     }
 };
 
+
+// ==============================
 // Get All Tickets
+// ==============================
 const getAllTickets = async (req, res) => {
     try {
         const tickets = await ticketService.getAllTickets();
@@ -39,7 +47,10 @@ const getAllTickets = async (req, res) => {
     }
 };
 
+
+// ==============================
 // Get Ticket by ID
+// ==============================
 const getTicketById = async (req, res) => {
     try {
         const ticketId = Number(req.params.id);
@@ -60,14 +71,18 @@ const getTicketById = async (req, res) => {
     }
 };
 
+
+// ==============================
 // Update Ticket
+// ==============================
 const updateTicket = async (req, res) => {
     try {
         const ticketId = Number(req.params.id);
 
         const ticket = await ticketService.updateTicket(
             ticketId,
-            req.body
+            req.body,
+            req.user.UserID
         );
 
         return res.status(200).json({
@@ -85,12 +100,18 @@ const updateTicket = async (req, res) => {
     }
 };
 
+
+// ==============================
 // Delete Ticket
+// ==============================
 const deleteTicket = async (req, res) => {
     try {
         const ticketId = Number(req.params.id);
 
-        const ticket = await ticketService.deleteTicket(ticketId);
+        const ticket = await ticketService.deleteTicket(
+            ticketId,
+            req.user.UserID
+        );
 
         return res.status(200).json({
             success: true,
@@ -107,15 +128,19 @@ const deleteTicket = async (req, res) => {
     }
 };
 
+
+// ==============================
 // Assign Ticket To User
+// ==============================
 const assignTicket = async (req, res) => {
     try {
         const ticketId = Number(req.params.id);
-        const userId = Number(req.body.userId);
+        const assignedUserId = Number(req.body.userId);
 
         const ticket = await ticketService.assignTicket(
             ticketId,
-            userId
+            assignedUserId,
+            req.user.UserID
         );
 
         return res.status(200).json({
@@ -133,6 +158,7 @@ const assignTicket = async (req, res) => {
         });
     }
 };
+
 
 module.exports = {
     createTicket,

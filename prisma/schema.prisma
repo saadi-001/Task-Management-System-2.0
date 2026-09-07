@@ -13,11 +13,13 @@ datasource db {
 // ==============================
 
 model user {
-  UserID      Int      @id @default(autoincrement())
-  Name        String
-  Email       String   @unique(map: "User_Email_key")
-  Password    String
-  DateOfBirth DateTime?
+  UserID          Int      @id @default(autoincrement())
+  Name            String
+  Email           String   @unique(map: "User_Email_key")
+  Password        String
+  DateOfBirth     DateTime?
+  ResetToken      String?
+  ResetTokenExpiry DateTime?
 
   @@map("user")
 }
@@ -90,7 +92,7 @@ model projectmembers {
   @@index([ProjectID], map: "ProjectMembers_ProjectID_fkey")
   @@index([UserID], map: "ProjectMembers_UserID_fkey")
 
-  @@map("projectMembers")
+  @@map("projectmembers")
 }
 
 
@@ -160,7 +162,7 @@ model activityhistory {
   @@index([TaskID], map: "ActivityHistory_TaskID_fkey")
   @@index([UserID], map: "ActivityHistory_UserID_fkey")
 
-  @@map("activityHistory")
+  @@map("activityhistory")
 }
 
 

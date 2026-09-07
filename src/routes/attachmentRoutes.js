@@ -4,6 +4,8 @@ const router = express.Router();
 
 const attachmentController = require("../controllers/attachmentController");
 const authMiddleware = require("../middlewares/authMiddleware");
+const upload = require("../middlewares/uploadMiddleware");
+const permissionMiddleware = require("../middlewares/permissionMiddleware");
 
 
 /**
@@ -50,6 +52,8 @@ const authMiddleware = require("../middlewares/authMiddleware");
 router.post(
     "/:ticketId/attachments",
     authMiddleware,
+    permissionMiddleware("UPLOAD_ATTACHMENT"),
+    upload.single("image"),
     attachmentController.uploadAttachment
 );
 
@@ -78,6 +82,7 @@ router.post(
 router.get(
     "/:ticketId/attachments",
     authMiddleware,
+    permissionMiddleware("VIEW_ATTACHMENT"),
     attachmentController.getTicketAttachments
 );
 

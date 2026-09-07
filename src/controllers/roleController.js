@@ -360,6 +360,32 @@ const getUserRoles = async (req, res) => {
     }
 };
 
+// ==============================
+// Get User Permissions
+// ==============================
+const getUserPermissions = async (req, res) => {
+    try {
+
+        const userId = Number(req.params.userId);
+
+        const permissions =
+            await roleService.getUserPermissions(userId);
+
+        res.status(200).json({
+            success: true,
+            data: permissions
+        });
+
+    } catch (error) {
+        console.error("Get User Permissions Error:", error);
+
+        res.status(error.statusCode || 500).json({
+            success: false,
+            message: error.message || "Failed to fetch user permissions"
+        });
+    }
+};
+
 
 // ==============================
 // Export
@@ -375,5 +401,7 @@ module.exports = {
     getRolePermissions,
     assignRoleToUser,
     removeRoleFromUser,
-    getUserRoles
+    getUserRoles,
+    getUserPermissions
+    
 };

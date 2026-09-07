@@ -4,6 +4,7 @@ const router = express.Router();
 
 const ticketController = require("../controllers/ticketController");
 const authMiddleware = require("../middlewares/authMiddleware");
+const permissionMiddleware = require("../middlewares/permissionMiddleware"); 
 
 
 /**
@@ -53,6 +54,7 @@ const authMiddleware = require("../middlewares/authMiddleware");
 router.post(
     "/",
     authMiddleware,
+    permissionMiddleware("CREATE_TICKET"),
     ticketController.createTicket
 );
 
@@ -72,6 +74,7 @@ router.post(
 router.get(
     "/",
     authMiddleware,
+    permissionMiddleware("VIEW_TICKET"),
     ticketController.getAllTickets
 );
 
@@ -100,6 +103,7 @@ router.get(
 router.get(
     "/:id",
     authMiddleware,
+    permissionMiddleware("VIEW_TICKET"),
     ticketController.getTicketById
 );
 
@@ -155,6 +159,7 @@ router.get(
 router.put(
     "/:id",
     authMiddleware,
+    permissionMiddleware("UPDATE_TICKET"),
     ticketController.updateTicket
 );
 
@@ -195,6 +200,7 @@ router.put(
 router.patch(
     "/:id/assign",
     authMiddleware,
+    permissionMiddleware("ASSIGN_TICKET"),
     ticketController.assignTicket
 );
 
@@ -223,6 +229,7 @@ router.patch(
 router.delete(
     "/:id",
     authMiddleware,
+    permissionMiddleware("DELETE_TICKET"),
     ticketController.deleteTicket
 );
 

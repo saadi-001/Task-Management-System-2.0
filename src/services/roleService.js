@@ -131,6 +131,17 @@ const getUserRoles = async (userId) => {
 
 };
 
+// ==============================
+// Get User Permissions
+// ==============================
+const getUserPermissions = async (userId) => {
+
+    return await roleRepository.getUserPermissions(
+        userId
+    );
+
+};
+
 
 // ==============================
 // Export
@@ -147,6 +158,7 @@ module.exports = {
     getRolePermissions,
     assignRoleToUser,
     removeRoleFromUser,
-    getUserRoles
+    getUserRoles,
+    getUserPermissions
 
 };
