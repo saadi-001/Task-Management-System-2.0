@@ -60,7 +60,7 @@ const Login = () => {
     };
 
     return (
-        <div className="login-page">
+         <div className="login-page">
 
             {/* LEFT SIDE */}
             <div className="login-brand">

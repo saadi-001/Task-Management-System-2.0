@@ -2163,3 +2163,194 @@ body {
         font-size: 16px;
     }
 }
+/* ================================
+   RESPONSIVE DESIGN
+   ================================ */
+
+/* ---------- TABLET ---------- */
+
+@media (max-width: 900px) {
+
+    /* Auth pages */
+    .auth-container {
+        padding: 20px;
+    }
+
+    .auth-card {
+        width: 100%;
+        max-width: 600px;
+    }
+
+    /* Signup / Reset */
+    .signup-container,
+    .reset-container {
+        flex-direction: column;
+    }
+
+    .signup-left,
+    .signup-right,
+    .reset-left,
+    .reset-right {
+        width: 100%;
+    }
+
+    /* Dashboard */
+    .dashboard-main {
+        padding: 30px 25px;
+    }
+
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* ---------- MOBILE ---------- */
+
+@media (max-width: 600px) {
+
+    body {
+        overflow-x: hidden;
+    }
+
+    /* Auth */
+    .auth-container {
+        min-height: 100vh;
+        padding: 15px;
+    }
+
+    .auth-card {
+        width: 100%;
+        padding: 25px 20px;
+        border-radius: 18px;
+    }
+
+    .auth-top {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .simple-top-button {
+        width: 100%;
+    }
+
+    .auth-content h1 {
+        font-size: 30px;
+    }
+
+    .auth-subtitle {
+        font-size: 15px;
+    }
+
+    .form-field input {
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .primary-auth-button {
+        width: 100%;
+    }
+
+
+    /* Signup */
+    .signup-left {
+        padding: 30px 20px;
+    }
+
+    .signup-right {
+        padding: 20px 15px;
+    }
+
+    .signup-card {
+        width: 100%;
+        padding: 30px 20px;
+        box-sizing: border-box;
+    }
+
+    .signup-hero h1 {
+        font-size: 36px;
+    }
+
+
+    /* Reset */
+    .reset-left {
+        padding: 30px 20px;
+    }
+
+    .reset-right {
+        padding: 20px 15px;
+    }
+
+    .reset-card {
+        width: 100%;
+        padding: 30px 20px;
+        box-sizing: border-box;
+    }
+
+    .reset-hero h1 {
+        font-size: 36px;
+    }
+
+
+    /* Dashboard */
+    .dashboard-main {
+        padding: 25px 15px;
+    }
+
+    .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .dashboard-header h1 {
+        font-size: 32px;
+    }
+
+    .dashboard-panel {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 20px;
+    }
+
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-brand span {
+        display: none;
+    }
+}
+
+
+/* ---------- SMALL MOBILE ---------- */
+
+@media (max-width: 400px) {
+
+    .auth-card {
+        padding: 22px 16px;
+    }
+
+    .auth-content h1 {
+        font-size: 27px;
+    }
+
+    .signup-card,
+    .reset-card {
+        padding: 25px 16px;
+    }
+
+    .signup-hero h1,
+    .reset-hero h1 {
+        font-size: 32px;
+    }
+
+    .dashboard-main {
+        padding: 20px 12px;
+    }
+
+    .dashboard-header h1 {
+        font-size: 28px;
+    }
+}

@@ -9,8 +9,8 @@ export default defineConfig({
     host: true,
 
     allowedHosts: [
-      "performed-shown-worship-corresponding.trycloudflare.com"
-    ],
+  "headset-programs-eve-composer.trycloudflare.com"
+],
 
     proxy: {
       "/api": {
