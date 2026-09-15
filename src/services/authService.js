@@ -5,6 +5,9 @@ const authRepository = require("../repositories/authRepository");
 const roleRepository = require("../repositories/roleRepository");
 const { generateToken } = require("../utils/jwt");
 
+// ==========================
+// Build Session
+// ==========================
 const buildSession = async (user) => {
     const [userRoles, userPermissions] = await Promise.all([
         roleRepository.getUserRoles(user.UserID),
@@ -12,7 +15,9 @@ const buildSession = async (user) => {
     ]);
 
     const roles = await Promise.all(
-        userRoles.map((userRole) => roleRepository.getRoleById(userRole.RoleID))
+        userRoles.map((userRole) =>
+            roleRepository.getRoleById(userRole.RoleID)
+        )
     );
 
     return {
@@ -22,78 +27,206 @@ const buildSession = async (user) => {
             Email: user.Email,
             DateOfBirth: user.DateOfBirth,
         },
-        roles: roles.filter(Boolean).map((role) => role.Name),
-        permissions: userPermissions.map((permission) => permission.Name),
+
+        roles: roles
+            .filter(Boolean)
+            .map((role) => role.Name),
+
+        permissions: userPermissions.map(
+            (permission) => permission.Name
+        ),
     };
 };
 
-const validateSignupData = ({ name, email, password, dateOfBirth, acceptedTerms }) => {
+// ==========================
+// Validate Signup Data
+// ==========================
+const validateSignupData = ({
+    name,
+    email,
+    password,
+    dateOfBirth,
+    acceptedTerms,
+}) => {
+    console.log("========== SIGNUP VALIDATION ==========");
+    console.log("Name:", name);
+    console.log("Email:", email);
+    console.log("DateOfBirth:", dateOfBirth);
+    console.log("DateOfBirth type:", typeof dateOfBirth);
+    console.log("AcceptedTerms:", acceptedTerms);
+
+    // ==========================
+    // Name Validation
+    // ==========================
     if (!name || name.trim().length < 2) {
-        const error = new Error("Name must contain at least 2 characters");
+        const error = new Error(
+            "Name must contain at least 2 characters"
+        );
+
         error.statusCode = 400;
         throw error;
     }
 
+    // ==========================
+    // Email Validation
+    // ==========================
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email || "")) {
-        const error = new Error("Enter a valid email address");
+        const error = new Error(
+            "Enter a valid email address"
+        );
+
         error.statusCode = 400;
         throw error;
     }
 
-    if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(password || "")) {
-        const error = new Error("Password must be 8+ characters with uppercase, lowercase, and a number");
+    // ==========================
+    // Password Validation
+    // ==========================
+    if (
+        !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(
+            password || ""
+        )
+    ) {
+        const error = new Error(
+            "Password must be 8+ characters with uppercase, lowercase, and a number"
+        );
+
         error.statusCode = 400;
         throw error;
     }
 
-    const birthDate = new Date(dateOfBirth);
-    const minimumAgeDate = new Date();
-    minimumAgeDate.setFullYear(minimumAgeDate.getFullYear() - 13);
+    // ==========================
+    // Date of Birth - OPTIONAL
+    // ==========================
+    if (dateOfBirth) {
+        console.log("DOB PROVIDED → validating DOB");
 
-    if (!dateOfBirth || Number.isNaN(birthDate.getTime()) || birthDate > minimumAgeDate) {
-        const error = new Error("You must provide a valid date of birth and be at least 13 years old");
-        error.statusCode = 400;
-        throw error;
+        const birthDate = new Date(dateOfBirth);
+
+        console.log("Parsed birth date:", birthDate);
+
+        // Invalid date
+        if (Number.isNaN(birthDate.getTime())) {
+            const error = new Error(
+                "Please provide a valid date of birth"
+            );
+
+            error.statusCode = 400;
+            throw error;
+        }
+
+        // Minimum age = 13
+        const minimumAgeDate = new Date();
+
+        minimumAgeDate.setFullYear(
+            minimumAgeDate.getFullYear() - 13
+        );
+
+        console.log(
+            "Minimum allowed birth date:",
+            minimumAgeDate
+        );
+
+        // User is younger than 13
+        if (birthDate > minimumAgeDate) {
+            const error = new Error(
+                "You must be at least 13 years old"
+            );
+
+            error.statusCode = 400;
+            throw error;
+        }
+
+        console.log("DOB VALIDATION PASSED");
+    } else {
+        console.log(
+            "DOB EMPTY → DOB validation skipped"
+        );
     }
 
+    // ==========================
+    // Terms Validation
+    // ==========================
     if (!acceptedTerms) {
-        const error = new Error("You must accept the platform rules before creating an account");
+        const error = new Error(
+            "You must accept the platform rules before creating an account"
+        );
+
         error.statusCode = 400;
         throw error;
     }
-};
 
+    console.log(
+        "========== SIGNUP VALIDATION PASSED =========="
+    );
+};
 
 // ==========================
 // Signup
 // ==========================
 const signup = async (userData) => {
+    console.log("========== SIGNUP START ==========");
+
+    console.log("Signup data received:", {
+        name: userData.name,
+        email: userData.email,
+        dateOfBirth: userData.dateOfBirth,
+        acceptedTerms: userData.acceptedTerms,
+    });
+
+    // Validate data
     validateSignupData(userData);
 
-    // Check if email already exists
-    const existingUser = await authRepository.findUserByEmail(
-        userData.email
-    );
+    // ==========================
+    // Check Existing User
+    // ==========================
+    const existingUser =
+        await authRepository.findUserByEmail(
+            String(userData.email || "").trim()
+        );
 
     if (existingUser) {
-        const error = new Error("Email already exists");
+        const error = new Error(
+            "Email already exists"
+        );
+
         error.statusCode = 409;
         throw error;
     }
 
+    // ==========================
     // Hash Password
+    // ==========================
     const hashedPassword = await bcrypt.hash(
         userData.password,
         10
     );
 
-    // Save User
-    const createdUser = await authRepository.createUser({
-        Name: userData.name,
-        Email: userData.email,
-        Password: hashedPassword,
-        DateOfBirth: new Date(`${userData.dateOfBirth}T00:00:00.000Z`),
-    });
+    // ==========================
+    // Create User
+    // ==========================
+    const createdUser =
+        await authRepository.createUser({
+            Name: userData.name.trim(),
+
+            Email: String(userData.email)
+                .trim()
+                .toLowerCase(),
+
+            Password: hashedPassword,
+
+            // DOB is optional
+            DateOfBirth: userData.dateOfBirth
+                ? new Date(
+                      `${userData.dateOfBirth}T00:00:00.000Z`
+                  )
+                : null,
+        });
+
+    console.log(
+        "USER CREATED SUCCESSFULLY:",
+        createdUser.UserID
+    );
 
     return {
         UserID: createdUser.UserID,
@@ -103,47 +236,64 @@ const signup = async (userData) => {
     };
 };
 
-
 // ==========================
 // Login
 // ==========================
 const login = async (email, password) => {
-
     // Find user by email
-    const user = await authRepository.findUserByEmail(
-        String(email || "").trim()
-    );
+    const user =
+        await authRepository.findUserByEmail(
+            String(email || "").trim()
+        );
 
     if (!user) {
-        const error = new Error("Invalid email or password");
+        const error = new Error(
+            "Invalid email or password"
+        );
+
         error.statusCode = 401;
         throw error;
     }
 
-    // Compare Password
-    const isPasswordCorrect = await bcrypt.compare(
-        password,
-        user.Password
-    );
+    // Compare password
+    const isPasswordCorrect =
+        await bcrypt.compare(
+            password,
+            user.Password
+        );
 
     if (!isPasswordCorrect) {
-        const error = new Error("Invalid Password");
+        const error = new Error(
+            "Invalid Password"
+        );
+
         error.statusCode = 401;
         throw error;
     }
 
-    // Generate JWT Token
+    // Generate JWT token
     const token = generateToken(user);
 
-    return { token, ...(await buildSession(user)) };
-
+    return {
+        token,
+        ...(await buildSession(user)),
+    };
 };
 
+// ==========================
+// Get Session
+// ==========================
 const getSession = async (userId) => {
-    const user = await authRepository.findUserById(Number(userId));
+    const user =
+        await authRepository.findUserById(
+            Number(userId)
+        );
 
     if (!user) {
-        const error = new Error("User not found");
+        const error = new Error(
+            "User not found"
+        );
+
         error.statusCode = 404;
         throw error;
     }
@@ -151,23 +301,28 @@ const getSession = async (userId) => {
     return buildSession(user);
 };
 
-
 // ==========================
 // Forgot Password
 // ==========================
 const forgotPassword = async (email) => {
-
     // Find user by email
-    const user = await authRepository.findUserByEmail(email);
+    const user =
+        await authRepository.findUserByEmail(
+            String(email || "").trim()
+        );
 
     if (!user) {
-        const error = new Error("User not found");
+        const error = new Error(
+            "User not found"
+        );
+
         error.statusCode = 404;
         throw error;
     }
 
     // Generate random reset token
-    const resetToken = crypto.randomBytes(32).toString("hex");
+    const resetToken =
+        crypto.randomBytes(32).toString("hex");
 
     // Token expires after 15 minutes
     const resetTokenExpiry = new Date(
@@ -184,45 +339,66 @@ const forgotPassword = async (email) => {
     return {
         resetToken,
     };
-
 };
-
 
 // ==========================
 // Reset Password
 // ==========================
-const resetPassword = async (resetToken, newPassword) => {
-
-    console.log("RESET TOKEN RECEIVED:", resetToken);
-
-    const user = await authRepository.findUserByResetToken(
+const resetPassword = async (
+    resetToken,
+    newPassword
+) => {
+    console.log(
+        "RESET TOKEN RECEIVED:",
         resetToken
     );
 
-    console.log("USER FOUND:", user);
+    const user =
+        await authRepository.findUserByResetToken(
+            resetToken
+        );
+
+    console.log(
+        "USER FOUND:",
+        user
+    );
 
     if (!user) {
-        const error = new Error("Invalid reset token");
+        const error = new Error(
+            "Invalid reset token"
+        );
+
         error.statusCode = 400;
         throw error;
     }
 
-    console.log("TOKEN EXPIRY:", user.ResetTokenExpiry);
-    console.log("CURRENT TIME:", new Date());
+    console.log(
+        "TOKEN EXPIRY:",
+        user.ResetTokenExpiry
+    );
+
+    console.log(
+        "CURRENT TIME:",
+        new Date()
+    );
 
     if (
         !user.ResetTokenExpiry ||
         user.ResetTokenExpiry < new Date()
     ) {
-        const error = new Error("Reset token has expired");
+        const error = new Error(
+            "Reset token has expired"
+        );
+
         error.statusCode = 400;
         throw error;
     }
 
-    const hashedPassword = await bcrypt.hash(
-        newPassword,
-        10
-    );
+    const hashedPassword =
+        await bcrypt.hash(
+            newPassword,
+            10
+        );
 
     await authRepository.updatePassword(
         user.UserID,
@@ -230,11 +406,14 @@ const resetPassword = async (resetToken, newPassword) => {
     );
 
     return {
-        message: "Password reset successfully",
+        message:
+            "Password reset successfully",
     };
 };
 
-
+// ==========================
+// Exports
+// ==========================
 module.exports = {
     signup,
     login,

@@ -10,6 +10,8 @@ const Signup = () => {
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [dateOfBirth, setDateOfBirth] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [acceptedTerms, setAcceptedTerms] = useState(false);
 
     const [message, setMessage] = useState("");
@@ -21,6 +23,16 @@ const Signup = () => {
 
         setMessage("");
         setError("");
+
+        console.log("========== SIGNUP DEBUG START ==========");
+        console.log("Signup form values:", {
+            name,
+            email,
+            password: password ? "[PROVIDED]" : "[EMPTY]",
+            confirmPassword: confirmPassword ? "[PROVIDED]" : "[EMPTY]",
+            dateOfBirth,
+            acceptedTerms,
+        });
 
         if (name.trim().length < 2 || !/^\S+@\S+\.\S+$/.test(email)) {
             setError("Please check the highlighted fields.");
@@ -42,9 +54,18 @@ const Signup = () => {
             return;
         }
 
+        console.log("FRONTEND VALIDATION PASSED");
+        console.log("ABOUT TO SEND SIGNUP REQUEST:", {
+            name,
+            email,
+            dateOfBirth: dateOfBirth || null,
+            acceptedTerms,
+        });
+
         setLoading(true);
 
         try {
+            console.log("CALLING AUTH SERVICE...");
             await authService.signup({
                 name,
                 email,
@@ -198,33 +219,73 @@ const Signup = () => {
                             <div className="signup-field">
                                 <label>Password</label>
 
-                                <input
-                                    type="password"
-                                    placeholder="8+ chars, uppercase, lowercase and number"
-                                    value={password}
-                                    onChange={(e) =>
-                                        setPassword(e.target.value)
-                                    }
-                                    required
-                                />
+                                <div className="signup-password-wrapper">
+                                    <input
+                                        type={showPassword ? "text" : "password"}
+                                        placeholder="8+ chars, uppercase, lowercase and number"
+                                        value={password}
+                                        onChange={(e) =>
+                                            setPassword(e.target.value)
+                                        }
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        className="signup-password-toggle"
+                                        onClick={() =>
+                                            setShowPassword((prev) => !prev)
+                                        }
+                                        aria-label={
+                                            showPassword
+                                                ? "Hide password"
+                                                : "Show password"
+                                        }
+                                    >
+                                        {showPassword ? "🙈" : "👁️"}
+                                    </button>
+                                </div>
                             </div>
 
 
                             <div className="signup-field">
                                 <label>Confirm Password</label>
 
-                                <input
-                                    type="password"
-                                    placeholder="Re-enter your password"
-                                    value={confirmPassword}
-                                    onChange={(e) => setConfirmPassword(e.target.value)}
-                                    required
-                                />
+                                <div className="signup-password-wrapper">
+                                    <input
+                                        type={
+                                            showConfirmPassword
+                                                ? "text"
+                                                : "password"
+                                        }
+                                        placeholder="Re-enter your password"
+                                        value={confirmPassword}
+                                        onChange={(e) =>
+                                            setConfirmPassword(e.target.value)
+                                        }
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        className="signup-password-toggle"
+                                        onClick={() =>
+                                            setShowConfirmPassword(
+                                                (prev) => !prev
+                                            )
+                                        }
+                                        aria-label={
+                                            showConfirmPassword
+                                                ? "Hide confirm password"
+                                                : "Show confirm password"
+                                        }
+                                    >
+                                        {showConfirmPassword ? "🙈" : "👁️"}
+                                    </button>
+                                </div>
                             </div>
 
 
                             <div className="signup-field">
-                                <label>Date of Birth</label>
+                                <label>Date of Birth (Optional)</label>
 
                                 <input
                                     type="date"
@@ -232,7 +293,6 @@ const Signup = () => {
                                     onChange={(e) =>
                                         setDateOfBirth(e.target.value)
                                     }
-                                    required
                                 />
                             </div>
 
