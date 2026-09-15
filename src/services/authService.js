@@ -8,6 +8,7 @@ const { generateToken } = require("../utils/jwt");
 // ==========================
 // Build Session
 // ==========================
+
 const buildSession = async (user) => {
     const [userRoles, userPermissions] = await Promise.all([
         roleRepository.getUserRoles(user.UserID),
@@ -27,11 +28,9 @@ const buildSession = async (user) => {
             Email: user.Email,
             DateOfBirth: user.DateOfBirth,
         },
-
         roles: roles
             .filter(Boolean)
             .map((role) => role.Name),
-
         permissions: userPermissions.map(
             (permission) => permission.Name
         ),
@@ -41,6 +40,7 @@ const buildSession = async (user) => {
 // ==========================
 // Validate Signup Data
 // ==========================
+
 const validateSignupData = ({
     name,
     email,
@@ -48,21 +48,14 @@ const validateSignupData = ({
     dateOfBirth,
     acceptedTerms,
 }) => {
-    console.log("========== SIGNUP VALIDATION ==========");
-    console.log("Name:", name);
-    console.log("Email:", email);
-    console.log("DateOfBirth:", dateOfBirth);
-    console.log("DateOfBirth type:", typeof dateOfBirth);
-    console.log("AcceptedTerms:", acceptedTerms);
-
     // ==========================
     // Name Validation
     // ==========================
+
     if (!name || name.trim().length < 2) {
         const error = new Error(
             "Name must contain at least 2 characters"
         );
-
         error.statusCode = 400;
         throw error;
     }
@@ -70,11 +63,11 @@ const validateSignupData = ({
     // ==========================
     // Email Validation
     // ==========================
+
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email || "")) {
         const error = new Error(
             "Enter a valid email address"
         );
-
         error.statusCode = 400;
         throw error;
     }
@@ -82,6 +75,7 @@ const validateSignupData = ({
     // ==========================
     // Password Validation
     // ==========================
+
     if (
         !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(
             password || ""
@@ -90,7 +84,6 @@ const validateSignupData = ({
         const error = new Error(
             "Password must be 8+ characters with uppercase, lowercase, and a number"
         );
-
         error.statusCode = 400;
         throw error;
     }
@@ -98,19 +91,14 @@ const validateSignupData = ({
     // ==========================
     // Date of Birth - OPTIONAL
     // ==========================
-    if (dateOfBirth) {
-        console.log("DOB PROVIDED → validating DOB");
 
+    if (dateOfBirth) {
         const birthDate = new Date(dateOfBirth);
 
-        console.log("Parsed birth date:", birthDate);
-
-        // Invalid date
         if (Number.isNaN(birthDate.getTime())) {
             const error = new Error(
                 "Please provide a valid date of birth"
             );
-
             error.statusCode = 400;
             throw error;
         }
@@ -122,64 +110,41 @@ const validateSignupData = ({
             minimumAgeDate.getFullYear() - 13
         );
 
-        console.log(
-            "Minimum allowed birth date:",
-            minimumAgeDate
-        );
-
         // User is younger than 13
         if (birthDate > minimumAgeDate) {
             const error = new Error(
                 "You must be at least 13 years old"
             );
-
             error.statusCode = 400;
             throw error;
         }
-
-        console.log("DOB VALIDATION PASSED");
-    } else {
-        console.log(
-            "DOB EMPTY → DOB validation skipped"
-        );
     }
 
     // ==========================
     // Terms Validation
     // ==========================
+
     if (!acceptedTerms) {
         const error = new Error(
             "You must accept the platform rules before creating an account"
         );
-
         error.statusCode = 400;
         throw error;
     }
-
-    console.log(
-        "========== SIGNUP VALIDATION PASSED =========="
-    );
 };
 
 // ==========================
 // Signup
 // ==========================
+
 const signup = async (userData) => {
-    console.log("========== SIGNUP START ==========");
-
-    console.log("Signup data received:", {
-        name: userData.name,
-        email: userData.email,
-        dateOfBirth: userData.dateOfBirth,
-        acceptedTerms: userData.acceptedTerms,
-    });
-
     // Validate data
     validateSignupData(userData);
 
     // ==========================
     // Check Existing User
     // ==========================
+
     const existingUser =
         await authRepository.findUserByEmail(
             String(userData.email || "").trim()
@@ -189,7 +154,6 @@ const signup = async (userData) => {
         const error = new Error(
             "Email already exists"
         );
-
         error.statusCode = 409;
         throw error;
     }
@@ -197,6 +161,7 @@ const signup = async (userData) => {
     // ==========================
     // Hash Password
     // ==========================
+
     const hashedPassword = await bcrypt.hash(
         userData.password,
         10
@@ -205,14 +170,13 @@ const signup = async (userData) => {
     // ==========================
     // Create User
     // ==========================
+
     const createdUser =
         await authRepository.createUser({
             Name: userData.name.trim(),
-
             Email: String(userData.email)
                 .trim()
                 .toLowerCase(),
-
             Password: hashedPassword,
 
             // DOB is optional
@@ -222,11 +186,6 @@ const signup = async (userData) => {
                   )
                 : null,
         });
-
-    console.log(
-        "USER CREATED SUCCESSFULLY:",
-        createdUser.UserID
-    );
 
     return {
         UserID: createdUser.UserID,
@@ -239,6 +198,7 @@ const signup = async (userData) => {
 // ==========================
 // Login
 // ==========================
+
 const login = async (email, password) => {
     // Find user by email
     const user =
@@ -250,7 +210,6 @@ const login = async (email, password) => {
         const error = new Error(
             "Invalid email or password"
         );
-
         error.statusCode = 401;
         throw error;
     }
@@ -266,7 +225,6 @@ const login = async (email, password) => {
         const error = new Error(
             "Invalid Password"
         );
-
         error.statusCode = 401;
         throw error;
     }
@@ -283,6 +241,7 @@ const login = async (email, password) => {
 // ==========================
 // Get Session
 // ==========================
+
 const getSession = async (userId) => {
     const user =
         await authRepository.findUserById(
@@ -293,7 +252,6 @@ const getSession = async (userId) => {
         const error = new Error(
             "User not found"
         );
-
         error.statusCode = 404;
         throw error;
     }
@@ -304,6 +262,7 @@ const getSession = async (userId) => {
 // ==========================
 // Forgot Password
 // ==========================
+
 const forgotPassword = async (email) => {
     // Find user by email
     const user =
@@ -315,7 +274,6 @@ const forgotPassword = async (email) => {
         const error = new Error(
             "User not found"
         );
-
         error.statusCode = 404;
         throw error;
     }
@@ -344,43 +302,23 @@ const forgotPassword = async (email) => {
 // ==========================
 // Reset Password
 // ==========================
+
 const resetPassword = async (
     resetToken,
     newPassword
 ) => {
-    console.log(
-        "RESET TOKEN RECEIVED:",
-        resetToken
-    );
-
     const user =
         await authRepository.findUserByResetToken(
             resetToken
         );
 
-    console.log(
-        "USER FOUND:",
-        user
-    );
-
     if (!user) {
         const error = new Error(
             "Invalid reset token"
         );
-
         error.statusCode = 400;
         throw error;
     }
-
-    console.log(
-        "TOKEN EXPIRY:",
-        user.ResetTokenExpiry
-    );
-
-    console.log(
-        "CURRENT TIME:",
-        new Date()
-    );
 
     if (
         !user.ResetTokenExpiry ||
@@ -389,7 +327,6 @@ const resetPassword = async (
         const error = new Error(
             "Reset token has expired"
         );
-
         error.statusCode = 400;
         throw error;
     }
@@ -406,14 +343,14 @@ const resetPassword = async (
     );
 
     return {
-        message:
-            "Password reset successfully",
+        message: "Password reset successfully",
     };
 };
 
 // ==========================
 // Exports
 // ==========================
+
 module.exports = {
     signup,
     login,

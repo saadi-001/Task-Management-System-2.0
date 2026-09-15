@@ -1,8 +1,13 @@
 const authService = require("../services/authService");
 
+// ==========================
+// Get Session
+// ==========================
 const getSession = async (req, res) => {
     try {
-        const session = await authService.getSession(req.user.UserID);
+        const session = await authService.getSession(
+            req.user.UserID
+        );
 
         return res.status(200).json({
             success: true,
@@ -11,7 +16,9 @@ const getSession = async (req, res) => {
     } catch (error) {
         return res.status(error.statusCode || 500).json({
             success: false,
-            message: error.message || "Unable to load session",
+            message:
+                error.message ||
+                "Unable to load session",
         });
     }
 };
@@ -20,10 +27,14 @@ const getSession = async (req, res) => {
 // Signup
 // ==========================
 const signup = async (req, res) => {
-
     try {
-
-        const { name, email, password, dateOfBirth, acceptedTerms } = req.body;
+        const {
+            name,
+            email,
+            password,
+            dateOfBirth,
+            acceptedTerms,
+        } = req.body;
 
         const user = await authService.signup({
             name,
@@ -33,32 +44,24 @@ const signup = async (req, res) => {
             acceptedTerms,
         });
 
-        res.status(201).json({
+        return res.status(201).json({
             success: true,
             message: "User registered successfully",
             data: user,
         });
-
     } catch (error) {
-
-    console.error(error);
-
-    res.status(error.statusCode || 500).json({
-        success: false,
-        message: error.message,
-    });
-
-}
-
+        return res.status(error.statusCode || 500).json({
+            success: false,
+            message: error.message,
+        });
+    }
 };
 
 // ==========================
 // Login
 // ==========================
 const login = async (req, res) => {
-
     try {
-
         const { email, password } = req.body;
 
         const result = await authService.login(
@@ -66,7 +69,7 @@ const login = async (req, res) => {
             password
         );
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Login successful",
             token: result.token,
@@ -74,81 +77,64 @@ const login = async (req, res) => {
             roles: result.roles,
             permissions: result.permissions,
         });
-
     } catch (error) {
-
-        console.error(error);
-
-        res.status(error.statusCode || 500).json({
+        return res.status(error.statusCode || 500).json({
             success: false,
             message: error.message,
         });
-
     }
-
 };
 
 // ==========================
 // Forgot Password
 // ==========================
 const forgotPassword = async (req, res) => {
-
     try {
-
         const { email } = req.body;
 
-        const result = await authService.forgotPassword(email);
+        const result =
+            await authService.forgotPassword(email);
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
-            message: "Password reset token generated",
+            message:
+                "Password reset token generated",
             data: result,
         });
-
     } catch (error) {
-
-        console.error(error);
-
-        res.status(error.statusCode || 500).json({
+        return res.status(error.statusCode || 500).json({
             success: false,
             message: error.message,
         });
-
     }
-
 };
-
 
 // ==========================
 // Reset Password
 // ==========================
 const resetPassword = async (req, res) => {
-
     try {
-
-        const { resetToken, newPassword } = req.body;
-
-        const result = await authService.resetPassword(
+        const {
             resetToken,
-            newPassword
-        );
+            newPassword,
+        } = req.body;
 
-        res.status(200).json({
+        const result =
+            await authService.resetPassword(
+                resetToken,
+                newPassword
+            );
+
+        return res.status(200).json({
             success: true,
             message: result.message,
         });
-
     } catch (error) {
-
-        console.error(error);
-
-        res.status(error.statusCode || 500).json({
+        return res.status(error.statusCode || 500).json({
             success: false,
             message: error.message,
         });
-
     }
-
 };
 
 module.exports = {

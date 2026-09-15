@@ -2,6 +2,67 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthError, authService } from "../services/authService";
 
+const EyeIcon = ({ visible }: { visible: boolean }) => {
+    if (visible) {
+        return (
+            <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+            >
+                <path
+                    d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                />
+                <circle
+                    cx="12"
+                    cy="12"
+                    r="3"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                />
+            </svg>
+        );
+    }
+
+    return (
+        <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+        >
+            <path
+                d="M3 3l18 18"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+            />
+            <path
+                d="M10.58 10.59a2 2 0 0 0 2.83 2.83"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+            />
+            <path
+                d="M9.88 5.08A9.94 9.94 0 0 1 12 4.8c6.5 0 10 7.2 10 7.2a18.36 18.36 0 0 1-3.03 3.9M6.61 6.61C3.75 8.58 2 12 2 12s3.5 7.2 10 7.2c1.55 0 2.92-.36 4.11-.91"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+        </svg>
+    );
+};
+
 const Signup = () => {
     const navigate = useNavigate();
 
@@ -24,23 +85,19 @@ const Signup = () => {
         setMessage("");
         setError("");
 
-        console.log("========== SIGNUP DEBUG START ==========");
-        console.log("Signup form values:", {
-            name,
-            email,
-            password: password ? "[PROVIDED]" : "[EMPTY]",
-            confirmPassword: confirmPassword ? "[PROVIDED]" : "[EMPTY]",
-            dateOfBirth,
-            acceptedTerms,
-        });
-
         if (name.trim().length < 2 || !/^\S+@\S+\.\S+$/.test(email)) {
             setError("Please check the highlighted fields.");
             return;
         }
 
-        if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(password)) {
-            setError("Password must be 8+ characters with uppercase, lowercase, and a number.");
+        if (
+            !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(
+                password
+            )
+        ) {
+            setError(
+                "Password must be 8+ characters with uppercase, lowercase and a number."
+            );
             return;
         }
 
@@ -50,22 +107,15 @@ const Signup = () => {
         }
 
         if (!acceptedTerms) {
-            setError("Please accept the platform rules before continuing.");
+            setError(
+                "Please accept the platform rules before continuing."
+            );
             return;
         }
-
-        console.log("FRONTEND VALIDATION PASSED");
-        console.log("ABOUT TO SEND SIGNUP REQUEST:", {
-            name,
-            email,
-            dateOfBirth: dateOfBirth || null,
-            acceptedTerms,
-        });
 
         setLoading(true);
 
         try {
-            console.log("CALLING AUTH SERVICE...");
             await authService.signup({
                 name,
                 email,
@@ -82,7 +132,11 @@ const Signup = () => {
         } catch (error: unknown) {
             console.error(error);
 
-            setError(error instanceof AuthError ? error.message : "Something went wrong. Please try again.");
+            setError(
+                error instanceof AuthError
+                    ? error.message
+                    : "Something went wrong. Please try again."
+            );
         } finally {
             setLoading(false);
         }
@@ -90,10 +144,8 @@ const Signup = () => {
 
     return (
         <div className="signup-page">
-
             {/* LEFT SIDE */}
             <div className="signup-left">
-
                 <div className="signup-brand">
                     <div className="signup-brand-icon">
                         ✓
@@ -105,7 +157,6 @@ const Signup = () => {
                 </div>
 
                 <div className="signup-hero">
-
                     <h1>
                         Organize.
                         <br />
@@ -120,7 +171,6 @@ const Signup = () => {
                     </p>
 
                     <div className="signup-features">
-
                         <div className="signup-feature">
                             <strong>✓ Work Together</strong>
                             <span>
@@ -141,21 +191,15 @@ const Signup = () => {
                                 Turn ideas into progress.
                             </span>
                         </div>
-
                     </div>
-
                 </div>
 
                 <div className="signup-decoration"></div>
-
             </div>
-
 
             {/* RIGHT SIDE */}
             <div className="signup-right">
-
                 <div className="signup-card">
-
                     <div className="signup-top-link">
                         Already a member?{" "}
                         <button
@@ -166,9 +210,7 @@ const Signup = () => {
                         </button>
                     </div>
 
-
                     <div className="signup-content">
-
                         <div className="signup-welcome">
                             Get Started
                         </div>
@@ -180,12 +222,10 @@ const Signup = () => {
                             projects, and tasks.
                         </p>
 
-
                         <form
                             className="signup-form"
                             onSubmit={handleSignup}
                         >
-
                             <div className="signup-field">
                                 <label>Name</label>
 
@@ -199,7 +239,6 @@ const Signup = () => {
                                     required
                                 />
                             </div>
-
 
                             <div className="signup-field">
                                 <label>Email</label>
@@ -215,13 +254,16 @@ const Signup = () => {
                                 />
                             </div>
 
-
                             <div className="signup-field">
                                 <label>Password</label>
 
                                 <div className="signup-password-wrapper">
                                     <input
-                                        type={showPassword ? "text" : "password"}
+                                        type={
+                                            showPassword
+                                                ? "text"
+                                                : "password"
+                                        }
                                         placeholder="8+ chars, uppercase, lowercase and number"
                                         value={password}
                                         onChange={(e) =>
@@ -229,11 +271,14 @@ const Signup = () => {
                                         }
                                         required
                                     />
+
                                     <button
                                         type="button"
                                         className="signup-password-toggle"
                                         onClick={() =>
-                                            setShowPassword((prev) => !prev)
+                                            setShowPassword(
+                                                (prev) => !prev
+                                            )
                                         }
                                         aria-label={
                                             showPassword
@@ -241,11 +286,12 @@ const Signup = () => {
                                                 : "Show password"
                                         }
                                     >
-                                        {showPassword ? "🙈" : "👁️"}
+                                        <EyeIcon
+                                            visible={showPassword}
+                                        />
                                     </button>
                                 </div>
                             </div>
-
 
                             <div className="signup-field">
                                 <label>Confirm Password</label>
@@ -260,10 +306,13 @@ const Signup = () => {
                                         placeholder="Re-enter your password"
                                         value={confirmPassword}
                                         onChange={(e) =>
-                                            setConfirmPassword(e.target.value)
+                                            setConfirmPassword(
+                                                e.target.value
+                                            )
                                         }
                                         required
                                     />
+
                                     <button
                                         type="button"
                                         className="signup-password-toggle"
@@ -278,14 +327,19 @@ const Signup = () => {
                                                 : "Show confirm password"
                                         }
                                     >
-                                        {showConfirmPassword ? "🙈" : "👁️"}
+                                        <EyeIcon
+                                            visible={
+                                                showConfirmPassword
+                                            }
+                                        />
                                     </button>
                                 </div>
                             </div>
 
-
                             <div className="signup-field">
-                                <label>Date of Birth (Optional)</label>
+                                <label>
+                                    Date of Birth (Optional)
+                                </label>
 
                                 <input
                                     type="date"
@@ -300,23 +354,31 @@ const Signup = () => {
                                 <input
                                     type="checkbox"
                                     checked={acceptedTerms}
-                                    onChange={(e) => setAcceptedTerms(e.target.checked)}
+                                    onChange={(e) =>
+                                        setAcceptedTerms(
+                                            e.target.checked
+                                        )
+                                    }
                                     required
                                 />
-                                <span>I agree to use workspace data responsibly and follow assigned access rules.</span>
-                            </label>
 
+                                <span>
+                                    I agree to use workspace data
+                                    responsibly and follow assigned
+                                    access rules.
+                                </span>
+                            </label>
 
                             <button
                                 type="submit"
                                 className="signup-button"
                                 disabled={loading}
                             >
-                                {loading ? "Creating account..." : "Create Account →"}
+                                {loading
+                                    ? "Creating account..."
+                                    : "Create Account →"}
                             </button>
-
                         </form>
-
 
                         {message && (
                             <div className="signup-success">
@@ -330,7 +392,6 @@ const Signup = () => {
                             </div>
                         )}
 
-
                         <div className="signup-bottom">
                             Already have an account?{" "}
                             <button
@@ -340,13 +401,9 @@ const Signup = () => {
                                 Login
                             </button>
                         </div>
-
                     </div>
-
                 </div>
-
             </div>
-
         </div>
     );
 };
