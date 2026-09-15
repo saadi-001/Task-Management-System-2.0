@@ -1,9 +1,12 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import api from "../services/api";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { AuthError } from "../services/authService";
+import { useAuth } from "../context/useAuth";
 
 const Login = () => {
     const navigate = useNavigate();
+    const location = useLocation();
+    const { login, isAuthenticated, isInitializing } = useAuth();
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -15,44 +18,45 @@ const Login = () => {
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
+    const redirectPath = (location.state as { from?: string } | null)?.from || "/dashboard";
+
+    useEffect(() => {
+        if (!isInitializing && isAuthenticated) navigate(redirectPath, { replace: true });
+    }, [isAuthenticated, isInitializing, navigate, redirectPath]);
+
+    if (isInitializing) {
+        return <div className="auth-loading" role="status" aria-live="polite">Restoring your session...</div>;
+    }
+
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
 
         setMessage("");
         setError("");
+
+        if (!email.trim() || !/^\S+@\S+\.\S+$/.test(email)) {
+            setError("Please enter a valid email address.");
+            return;
+        }
+
+        if (!password) {
+            setError("Please enter your password.");
+            return;
+        }
+
         setLoading(true);
 
         try {
-            const response = await api.post("/auth/login", {
-                email,
-                password,
-            });
-
-            // Save JWT token
-            localStorage.setItem(
-                "token",
-                response.data.token
-            );
-
-            // Save remember-me preference
-            localStorage.setItem(
-                "rememberMe",
-                rememberMe.toString()
-            );
+            await login(email.trim(), password);
+            localStorage.setItem("rememberMe", String(rememberMe));
 
             setMessage("Login successful!");
+            navigate(redirectPath, { replace: true });
 
-            setTimeout(() => {
-                navigate("/dashboard");
-            }, 500);
-
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error);
 
-            setError(
-                error.response?.data?.message ||
-                "Unable to login. Please check your credentials."
-            );
+            setError(error instanceof AuthError ? error.message : "Something went wrong. Please try again.");
 
         } finally {
             setLoading(false);

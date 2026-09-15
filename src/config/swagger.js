@@ -23,7 +23,7 @@ const options = {
                     type: "http",
                     scheme: "bearer",
                     bearerFormat: "JWT",
-                    description: "Enter JWT token received from login"
+                    description: "Paste the JWT token from login without the Bearer prefix"
                 }
             }
         },

@@ -23,6 +23,7 @@ app.use(
     swaggerUi.serve,
     swaggerUi.setup(swaggerSpec, {
         swaggerOptions: {
+            persistAuthorization: true,
             tagsSorter: (a, b) => {
                 const order = [
                     "Authentication",

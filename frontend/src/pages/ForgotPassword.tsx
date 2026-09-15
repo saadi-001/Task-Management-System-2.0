@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import api from "../services/api";
 
 const ForgotPassword = () => {
@@ -23,8 +24,6 @@ const ForgotPassword = () => {
                 }
             );
 
-            console.log(response.data);
-
             const resetToken = response.data.data.resetToken;
 
             setMessage("Password reset link generated.");
@@ -33,12 +32,13 @@ const ForgotPassword = () => {
                 navigate(`/reset-password?token=${resetToken}`);
             }, 700);
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error);
 
             setError(
-                error.response?.data?.message ||
-                "Something went wrong"
+                axios.isAxiosError(error)
+                    ? error.response?.data?.message || "Something went wrong"
+                    : "Something went wrong"
             );
         }
     };

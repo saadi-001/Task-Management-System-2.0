@@ -18,7 +18,9 @@ const authenticate = (req, res, next) => {
         }
 
         // Extract Token
-        const token = authHeader.split(" ")[1];
+        const token = authHeader
+            .replace(/^Bearer\s+/i, "")
+            .trim();
 
         // Verify Token
         const decoded = jwt.verify(

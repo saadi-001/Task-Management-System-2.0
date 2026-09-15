@@ -3,6 +3,10 @@ const express = require("express");
 const router = express.Router();
 
 const roleController = require("../controllers/roleController");
+const authMiddleware = require("../middlewares/authMiddleware");
+const adminMiddleware = require("../middlewares/adminMiddleware");
+
+router.use(authMiddleware, adminMiddleware);
 
 /**
  * @swagger

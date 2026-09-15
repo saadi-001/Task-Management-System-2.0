@@ -1,11 +1,17 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
+import { useAuth } from "../context/useAuth";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
-    const token = localStorage.getItem("token");
+    const location = useLocation();
+    const { isAuthenticated, isInitializing } = useAuth();
 
-    if (!token) {
-        return <Navigate to="/login" replace />;
+    if (isInitializing) {
+        return <div className="auth-loading" role="status" aria-live="polite">Restoring your session...</div>;
+    }
+
+    if (!isAuthenticated) {
+        return <Navigate to="/login" replace state={{ from: location.pathname }} />;
     }
 
     return children;

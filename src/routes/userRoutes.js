@@ -8,6 +8,7 @@ const {
 } = require("../controllers/userController");
 
 const authMiddleware = require("../middlewares/authMiddleware");
+const adminMiddleware = require("../middlewares/adminMiddleware");
 
 const router = express.Router();
 
@@ -32,7 +33,7 @@ const router = express.Router();
  *       401:
  *         description: Unauthorized
  */
-router.get("/", authMiddleware, getAllUsers);
+router.get("/", authMiddleware, adminMiddleware, getAllUsers);
 
 /**
  * @swagger
@@ -82,7 +83,7 @@ router.get("/:id", authMiddleware, getUserById);
  *       401:
  *         description: Unauthorized
  */
-router.delete("/:id", authMiddleware, deleteUser);
+router.delete("/:id", authMiddleware, adminMiddleware, deleteUser);
 
 /**
  * @swagger
@@ -107,6 +108,6 @@ router.delete("/:id", authMiddleware, deleteUser);
  *       401:
  *         description: Unauthorized
  */
-router.delete("/:id/force", authMiddleware, forceDeleteUser);
+router.delete("/:id/force", authMiddleware, adminMiddleware, forceDeleteUser);
 
 module.exports = router;

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import axios from "axios";
 import api from "../services/api";
 
 const ResetPassword = () => {
@@ -38,12 +39,13 @@ const ResetPassword = () => {
                 navigate("/login");
             }, 1000);
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error);
 
             setError(
-                error.response?.data?.message ||
-                "Password reset failed"
+                axios.isAxiosError(error)
+                    ? error.response?.data?.message || "Password reset failed"
+                    : "Password reset failed"
             );
         }
     };

@@ -6,6 +6,17 @@ const organizationController = require("../controllers/organizationController");
 const authMiddleware = require("../middlewares/authMiddleware");
 const permissionMiddleware = require("../middlewares/permissionMiddleware");
 
+// ==============================
+// DEBUG: Check Middleware/Controller
+// ==============================
+console.log("Organization Routes Debug:");
+console.log("authMiddleware:", typeof authMiddleware);
+console.log("permissionMiddleware:", typeof permissionMiddleware);
+console.log(
+    "createOrganization:",
+    typeof organizationController.createOrganization
+);
+
 /**
  * @swagger
  * tags:

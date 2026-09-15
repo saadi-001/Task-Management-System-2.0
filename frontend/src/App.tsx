@@ -6,10 +6,15 @@ import Dashboard from "./pages/Dashboard";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import ProtectedRoute from "./components/ProtectedRoute";
+import Workspace from "./pages/Workspace";
+import { AuthProvider } from "./context/AuthContext";
+import AppToast from "./components/AppToast";
 
 function App() {
     return (
         <BrowserRouter>
+            <AuthProvider>
+            <AppToast />
 
             <Routes>
 
@@ -18,6 +23,8 @@ function App() {
                 <Route path="/signup" element={<Signup />} />
 
                 <Route path="/dashboard" element={ <ProtectedRoute> <Dashboard /> </ProtectedRoute> } />
+
+                <Route path="/workspace/:module" element={ <ProtectedRoute> <Workspace /> </ProtectedRoute> } />
 
                 <Route path="/forgot-password" element={<ForgotPassword />} />
 
@@ -30,6 +37,7 @@ function App() {
 
             </Routes>
 
+            </AuthProvider>
         </BrowserRouter>
     );
 }

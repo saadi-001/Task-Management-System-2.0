@@ -5,7 +5,9 @@ const {
     login,
     forgotPassword,
     resetPassword,
+    getSession,
 } = require("../controllers/authController");
+const authMiddleware = require("../middlewares/authMiddleware");
 
 const router = express.Router();
 /**
@@ -78,6 +80,22 @@ router.post("/signup", signup);
  *         description: Invalid credentials
  */
 router.post("/login", login);
+
+/**
+ * @swagger
+ * /api/auth/me:
+ *   get:
+ *     summary: Get the current user's safe profile and access rules
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Current user session
+ *       401:
+ *         description: Missing or invalid JWT
+ */
+router.get("/me", authMiddleware, getSession);
 
 // ==========================
 // Forgot Password

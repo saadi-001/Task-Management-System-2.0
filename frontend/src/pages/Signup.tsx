@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../services/api";
+import { AuthError, authService } from "../services/authService";
 
 const Signup = () => {
     const navigate = useNavigate();
@@ -8,10 +8,13 @@ const Signup = () => {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
     const [dateOfBirth, setDateOfBirth] = useState("");
+    const [acceptedTerms, setAcceptedTerms] = useState(false);
 
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
 
     const handleSignup = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -19,28 +22,48 @@ const Signup = () => {
         setMessage("");
         setError("");
 
+        if (name.trim().length < 2 || !/^\S+@\S+\.\S+$/.test(email)) {
+            setError("Please check the highlighted fields.");
+            return;
+        }
+
+        if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(password)) {
+            setError("Password must be 8+ characters with uppercase, lowercase, and a number.");
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            setError("Passwords do not match.");
+            return;
+        }
+
+        if (!acceptedTerms) {
+            setError("Please accept the platform rules before continuing.");
+            return;
+        }
+
+        setLoading(true);
+
         try {
-            const response = await api.post("/auth/signup", {
+            await authService.signup({
                 name,
                 email,
                 password,
-                dateOfBirth: dateOfBirth || null,
+                dateOfBirth,
+                acceptedTerms,
             });
-
-            console.log(response.data);
 
             setMessage("Account created successfully!");
 
             setTimeout(() => {
                 navigate("/login");
             }, 1000);
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error);
 
-            setError(
-                error.response?.data?.message ||
-                "Signup failed"
-            );
+            setError(error instanceof AuthError ? error.message : "Something went wrong. Please try again.");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -177,11 +200,24 @@ const Signup = () => {
 
                                 <input
                                     type="password"
-                                    placeholder="Create a password"
+                                    placeholder="8+ chars, uppercase, lowercase and number"
                                     value={password}
                                     onChange={(e) =>
                                         setPassword(e.target.value)
                                     }
+                                    required
+                                />
+                            </div>
+
+
+                            <div className="signup-field">
+                                <label>Confirm Password</label>
+
+                                <input
+                                    type="password"
+                                    placeholder="Re-enter your password"
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
                                     required
                                 />
                             </div>
@@ -196,15 +232,27 @@ const Signup = () => {
                                     onChange={(e) =>
                                         setDateOfBirth(e.target.value)
                                     }
+                                    required
                                 />
                             </div>
+
+                            <label className="policy-check">
+                                <input
+                                    type="checkbox"
+                                    checked={acceptedTerms}
+                                    onChange={(e) => setAcceptedTerms(e.target.checked)}
+                                    required
+                                />
+                                <span>I agree to use workspace data responsibly and follow assigned access rules.</span>
+                            </label>
 
 
                             <button
                                 type="submit"
                                 className="signup-button"
+                                disabled={loading}
                             >
-                                Create Account →
+                                {loading ? "Creating account..." : "Create Account →"}
                             </button>
 
                         </form>

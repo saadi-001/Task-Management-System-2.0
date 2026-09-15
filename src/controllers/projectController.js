@@ -1,9 +1,57 @@
 const projectService = require("../services/projectService");
 
+const getProjectId = (value) => {
+    const projectId = Number(value);
+
+    if (!Number.isInteger(projectId) || projectId < 1) {
+        const error = new Error("Project id must be a positive integer");
+        error.statusCode = 400;
+        throw error;
+    }
+
+    return projectId;
+};
+
+const getProjectData = (body, { required = false } = {}) => {
+    const { Name, Description, OrganizationID, OwnerID } = body || {};
+    const data = {};
+
+    if (required && (!Name || !String(Name).trim())) {
+        const error = new Error("Name is required");
+        error.statusCode = 400;
+        throw error;
+    }
+
+    if (Name !== undefined) data.Name = String(Name).trim();
+    if (Description !== undefined) data.Description = Description || null;
+
+    for (const [field, value] of [["OrganizationID", OrganizationID], ["OwnerID", OwnerID]]) {
+        if (value !== undefined) {
+            const id = Number(value);
+            if (!Number.isInteger(id) || id < 1) {
+                const error = new Error(`${field} must be a positive integer`);
+                error.statusCode = 400;
+                throw error;
+            }
+            data[field] = id;
+        }
+    }
+
+    if (required && (!data.OrganizationID || !data.OwnerID)) {
+        const error = new Error("OrganizationID and OwnerID are required");
+        error.statusCode = 400;
+        throw error;
+    }
+
+    return data;
+};
+
 // Create Project
 const createProject = async (req, res) => {
     try {
-        const project = await projectService.createProject(req.body);
+        const project = await projectService.createProject(
+            getProjectData(req.body, { required: true })
+        );
 
         return res.status(201).json({
             success: true,
@@ -42,7 +90,7 @@ const getAllProjects = async (req, res) => {
 // Get Project by ID
 const getProjectById = async (req, res) => {
     try {
-        const projectId = Number(req.params.id);
+        const projectId = getProjectId(req.params.id);
 
         const project = await projectService.getProjectById(projectId);
 
@@ -63,11 +111,11 @@ const getProjectById = async (req, res) => {
 // Update Project
 const updateProject = async (req, res) => {
     try {
-        const projectId = Number(req.params.id);
+        const projectId = getProjectId(req.params.id);
 
         const project = await projectService.updateProject(
             projectId,
-            req.body
+            getProjectData(req.body)
         );
 
         return res.status(200).json({
@@ -88,7 +136,7 @@ const updateProject = async (req, res) => {
 // Delete Project
 const deleteProject = async (req, res) => {
     try {
-        const projectId = Number(req.params.id);
+        const projectId = getProjectId(req.params.id);
 
         const project = await projectService.deleteProject(projectId);
 

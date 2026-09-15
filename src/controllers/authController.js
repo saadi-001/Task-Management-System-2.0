@@ -1,5 +1,21 @@
 const authService = require("../services/authService");
 
+const getSession = async (req, res) => {
+    try {
+        const session = await authService.getSession(req.user.UserID);
+
+        return res.status(200).json({
+            success: true,
+            data: session,
+        });
+    } catch (error) {
+        return res.status(error.statusCode || 500).json({
+            success: false,
+            message: error.message || "Unable to load session",
+        });
+    }
+};
+
 // ==========================
 // Signup
 // ==========================
@@ -7,13 +23,14 @@ const signup = async (req, res) => {
 
     try {
 
-        const { name, email, password, dateOfBirth } = req.body;
+        const { name, email, password, dateOfBirth, acceptedTerms } = req.body;
 
         const user = await authService.signup({
             name,
             email,
             password,
             dateOfBirth,
+            acceptedTerms,
         });
 
         res.status(201).json({
@@ -54,13 +71,15 @@ const login = async (req, res) => {
             message: "Login successful",
             token: result.token,
             user: result.user,
+            roles: result.roles,
+            permissions: result.permissions,
         });
 
     } catch (error) {
 
         console.error(error);
 
-        res.status(500).json({
+        res.status(error.statusCode || 500).json({
             success: false,
             message: error.message,
         });
@@ -137,4 +156,5 @@ module.exports = {
     login,
     forgotPassword,
     resetPassword,
+    getSession,
 };
