@@ -8,7 +8,17 @@ const routes = require("./routes");
 
 const app = express();
 
-app.use(cors());
+app.use(
+    cors({
+        origin: [
+            "http://localhost:5173",
+            "https://commodity-crust-womanly.ngrok-free.dev",
+        ],
+        credentials: true,
+    }),
+);
+
+
 app.use(express.json({ limit: "20mb" }));
 
 app.get("/", (req, res) => {

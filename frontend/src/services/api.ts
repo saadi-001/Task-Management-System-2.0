@@ -1,9 +1,10 @@
 import axios from "axios";
 
 const api = axios.create({
-    baseURL: "http://192.168.0.184:3000/api",
+    baseURL: import.meta.env.VITE_API_URL,
     headers: {
         "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true",
     },
 });
 
