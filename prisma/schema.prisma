@@ -20,6 +20,7 @@ model user {
   DateOfBirth     DateTime?
   ResetToken      String?
   ResetTokenExpiry DateTime?
+  IsActive        Boolean  @default(true)
 
   @@map("user")
 }
@@ -69,7 +70,7 @@ model project {
   ProjectID      Int     @id @default(autoincrement())
   Name           String
   Description    String?
-  OrganizationID Int
+  OrganizationID Int?
   OwnerID        Int
 
   @@index([OrganizationID], map: "Project_OrganizationID_fkey")

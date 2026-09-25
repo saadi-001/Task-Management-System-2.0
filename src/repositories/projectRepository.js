@@ -21,6 +21,15 @@ const findAllProjects = async () => {
     return await prisma.project.findMany();
 };
 
+// Get Projects by Organization
+const findProjectsByOrganizationId = async (organizationId) => {
+    return await prisma.project.findMany({
+        where: {
+            OrganizationID: Number(organizationId),
+        },
+    });
+};
+
 // Update Project
 const updateProject = async (projectId, projectData) => {
     return await prisma.project.update({
@@ -44,6 +53,7 @@ module.exports = {
     createProject,
     findProjectById,
     findAllProjects,
+    findProjectsByOrganizationId,
     updateProject,
     deleteProject,
 };

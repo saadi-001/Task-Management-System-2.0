@@ -9,18 +9,35 @@ const ForgotPassword = () => {
     const [email, setEmail] = useState("");
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
+    const [fieldErrors, setFieldErrors] = useState<{ email?: string }>({});
+    const [loading, setLoading] = useState(false);
 
     const handleForgotPassword = async (e: React.FormEvent) => {
         e.preventDefault();
 
         setMessage("");
         setError("");
+        const newErrors: { email?: string } = {};
+
+        if (!email.trim()) {
+            newErrors.email = "Email address is required.";
+        } else if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
+            newErrors.email = "Please enter a valid email address (e.g. name@company.com).";
+        }
+
+        if (Object.keys(newErrors).length > 0) {
+            setFieldErrors(newErrors);
+            return;
+        }
+
+        setFieldErrors({});
+        setLoading(true);
 
         try {
             const response = await api.post(
                 "/auth/forgot-password",
                 {
-                    email,
+                    email: email.trim(),
                 }
             );
 
@@ -34,12 +51,13 @@ const ForgotPassword = () => {
 
         } catch (error: unknown) {
             console.error(error);
+            const errMsg = axios.isAxiosError(error)
+                ? error.response?.data?.message || "Something went wrong"
+                : "Something went wrong";
 
-            setError(
-                axios.isAxiosError(error)
-                    ? error.response?.data?.message || "Something went wrong"
-                    : "Something went wrong"
-            );
+            setError(errMsg);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -138,7 +156,7 @@ const ForgotPassword = () => {
 
                     </div>
 
-                    <form onSubmit={handleForgotPassword}>
+                    <form noValidate onSubmit={handleForgotPassword}>
 
                         <div className="input-group">
 
@@ -146,7 +164,7 @@ const ForgotPassword = () => {
                                 Email
                             </label>
 
-                            <div className="input-wrapper">
+                            <div className={`input-wrapper ${fieldErrors.email ? "has-error" : ""}`}>
 
                                 <span className="input-icon">
                                     ✉
@@ -156,21 +174,36 @@ const ForgotPassword = () => {
                                     type="email"
                                     placeholder="Enter your email"
                                     value={email}
-                                    onChange={(e) =>
-                                        setEmail(e.target.value)
-                                    }
-                                    required
+                                    onChange={(e) => {
+                                        setEmail(e.target.value);
+                                        if (fieldErrors.email) setFieldErrors({ email: undefined });
+                                        if (error) setError("");
+                                    }}
                                 />
 
                             </div>
+                            {fieldErrors.email && (
+                                <div className="field-error-text" role="alert">
+                                    <span className="error-bullet">●</span> {fieldErrors.email}
+                                </div>
+                            )}
 
                         </div>
+
+                        {/* FORM-LEVEL AUTH ERROR */}
+                        {error && (
+                            <div className="auth-form-error" role="alert">
+                                <span className="auth-form-error-icon">⚠️</span>
+                                <span>{error}</span>
+                            </div>
+                        )}
 
                         <button
                             type="submit"
                             className="login-button"
+                            disabled={loading}
                         >
-                            Reset Password →
+                            {loading ? "Generating reset link..." : "Reset Password →"}
                         </button>
 
                     </form>
@@ -178,12 +211,6 @@ const ForgotPassword = () => {
                     {message && (
                         <div className="success-message">
                             {message}
-                        </div>
-                    )}
-
-                    {error && (
-                        <div className="error-message">
-                            {error}
                         </div>
                     )}
 

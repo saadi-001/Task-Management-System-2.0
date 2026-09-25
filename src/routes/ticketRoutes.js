@@ -4,8 +4,7 @@ const router = express.Router();
 
 const ticketController = require("../controllers/ticketController");
 const authMiddleware = require("../middlewares/authMiddleware");
-const permissionMiddleware = require("../middlewares/permissionMiddleware"); 
-
+const permissionMiddleware = require("../middlewares/permissionMiddleware");
 
 /**
  * @swagger
@@ -13,7 +12,6 @@ const permissionMiddleware = require("../middlewares/permissionMiddleware");
  *   name: Tickets
  *   description: Ticket / Task Management APIs
  */
-
 
 /**
  * @swagger
@@ -58,7 +56,6 @@ router.post(
     ticketController.createTicket
 );
 
-
 /**
  * @swagger
  * /api/tickets:
@@ -78,6 +75,69 @@ router.get(
     ticketController.getAllTickets
 );
 
+/**
+ * @swagger
+ * /api/tickets/project/{projectId}:
+ *   get:
+ *     summary: Get tickets by project ID
+ *     tags: [Tickets]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: projectId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         example: 2
+ *     responses:
+ *       200:
+ *         description: Project tickets retrieved successfully
+ *       400:
+ *         description: Invalid project ID
+ *       401:
+ *         description: Unauthorized
+ */
+router.get(
+    "/project/:projectId",
+    authMiddleware,
+    permissionMiddleware("VIEW_TICKET"),
+    ticketController.getTicketsByProjectId
+);
+
+/**
+ * @swagger
+ * /api/tickets/user/{userId}:
+ *   get:
+ *     summary: Get tickets assigned to a specific user
+ *     tags: [Tickets]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         example: 3
+ *     responses:
+ *       200:
+ *         description: Assigned tickets retrieved successfully
+ *       400:
+ *         description: Invalid user ID
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: User view permission required
+ *       404:
+ *         description: User not found
+ */
+router.get(
+    "/user/:userId",
+    authMiddleware,
+    permissionMiddleware("VIEW_USER"),
+    ticketController.getTicketsByAssignedUser
+);
 
 /**
  * @swagger
@@ -106,7 +166,6 @@ router.get(
     permissionMiddleware("VIEW_TICKET"),
     ticketController.getTicketById
 );
-
 
 /**
  * @swagger
@@ -163,7 +222,6 @@ router.put(
     ticketController.updateTicket
 );
 
-
 /**
  * @swagger
  * /api/tickets/{id}/assign:
@@ -204,7 +262,6 @@ router.patch(
     ticketController.assignTicket
 );
 
-
 /**
  * @swagger
  * /api/tickets/{id}:
@@ -232,6 +289,5 @@ router.delete(
     permissionMiddleware("DELETE_TICKET"),
     ticketController.deleteTicket
 );
-
 
 module.exports = router;

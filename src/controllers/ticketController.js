@@ -25,7 +25,6 @@ const createTicket = async (req, res) => {
     }
 };
 
-
 // ==============================
 // Get All Tickets
 // ==============================
@@ -47,6 +46,72 @@ const getAllTickets = async (req, res) => {
     }
 };
 
+// ==============================
+// Get Tickets by Project ID
+// ==============================
+const getTicketsByProjectId = async (req, res) => {
+    try {
+        const projectId = Number(req.params.projectId);
+
+        if (!Number.isInteger(projectId) || projectId < 1) {
+            return res.status(400).json({
+                success: false,
+                message: "Project id must be a positive integer",
+            });
+        }
+
+        const tickets =
+            await ticketService.getTicketsByProjectId(projectId);
+
+        return res.status(200).json({
+            success: true,
+            data: tickets,
+        });
+    } catch (error) {
+        console.error(error);
+
+        return res.status(error.statusCode || 500).json({
+            success: false,
+            message:
+                error.message ||
+                "Failed to fetch project tickets",
+        });
+    }
+};
+
+// ==============================
+// Get Tickets Assigned To User
+// ==============================
+const getTicketsByAssignedUser = async (req, res) => {
+    try {
+        const userId = Number(req.params.userId);
+
+        if (!Number.isInteger(userId) || userId < 1) {
+            return res.status(400).json({
+                success: false,
+                message: "User id must be a positive integer",
+            });
+        }
+
+        const tickets =
+            await ticketService.getTicketsByAssignedUser(userId);
+
+        return res.status(200).json({
+            success: true,
+            count: tickets.length,
+            data: tickets,
+        });
+    } catch (error) {
+        console.error(error);
+
+        return res.status(error.statusCode || 500).json({
+            success: false,
+            message:
+                error.message ||
+                "Failed to fetch user's assigned tickets",
+        });
+    }
+};
 
 // ==============================
 // Get Ticket by ID
@@ -70,7 +135,6 @@ const getTicketById = async (req, res) => {
         });
     }
 };
-
 
 // ==============================
 // Update Ticket
@@ -100,7 +164,6 @@ const updateTicket = async (req, res) => {
     }
 };
 
-
 // ==============================
 // Delete Ticket
 // ==============================
@@ -128,7 +191,6 @@ const deleteTicket = async (req, res) => {
     }
 };
 
-
 // ==============================
 // Assign Ticket To User
 // ==============================
@@ -148,7 +210,6 @@ const assignTicket = async (req, res) => {
             message: "Ticket assigned successfully",
             data: ticket,
         });
-
     } catch (error) {
         console.error(error);
 
@@ -159,11 +220,12 @@ const assignTicket = async (req, res) => {
     }
 };
 
-
 module.exports = {
     createTicket,
     getTicketById,
     getAllTickets,
+    getTicketsByProjectId,
+    getTicketsByAssignedUser,
     updateTicket,
     deleteTicket,
     assignTicket,

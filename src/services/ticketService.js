@@ -2,7 +2,6 @@ const ticketRepository = require("../repositories/ticketRepository");
 const authRepository = require("../repositories/authRepository");
 const activityService = require("./activityService");
 
-
 // ==============================
 // Allowed Ticket Status Workflow
 // ==============================
@@ -14,12 +13,10 @@ const allowedStatusTransitions = {
     "Done": ["In Progress"],
 };
 
-
 // ==============================
 // Create Ticket
 // ==============================
 const createTicket = async (ticketData, userId) => {
-
     const ticket = await ticketRepository.createTicket(ticketData);
 
     await activityService.createActivity(
@@ -31,12 +28,10 @@ const createTicket = async (ticketData, userId) => {
     return ticket;
 };
 
-
 // ==============================
 // Get Ticket by ID
 // ==============================
 const getTicketById = async (ticketId) => {
-
     const ticket = await ticketRepository.findTicketById(ticketId);
 
     if (!ticket) {
@@ -48,7 +43,6 @@ const getTicketById = async (ticketId) => {
     return ticket;
 };
 
-
 // ==============================
 // Get All Tickets
 // ==============================
@@ -56,24 +50,33 @@ const getAllTickets = async () => {
     return await ticketRepository.findAllTickets();
 };
 
+// ==============================
+// Get Tickets by Project ID
+// ==============================
+const getTicketsByProjectId = async (projectId) => {
+    return await ticketRepository.findTicketsByProjectId(projectId);
+};
+
+// ==============================
+// Get Tickets Assigned To User
+// ==============================
+const getTicketsByAssignedUser = async (userId) => {
+    return await ticketRepository.findTicketsByAssignedUser(userId);
+};
 
 // ==============================
 // Update Ticket
 // ==============================
 const updateTicket = async (ticketId, ticketData, userId) => {
-
-    // Get existing ticket
     const existingTicket = await getTicketById(ticketId);
 
     // Check status workflow only when Status is being changed
     if (ticketData.Status) {
-
         const currentStatus = existingTicket.Status;
         const newStatus = ticketData.Status;
 
         // Same status is allowed
         if (currentStatus !== newStatus) {
-
             const allowedStatuses =
                 allowedStatusTransitions[currentStatus];
 
@@ -92,13 +95,11 @@ const updateTicket = async (ticketId, ticketData, userId) => {
         }
     }
 
-    // Update ticket
     const updatedTicket = await ticketRepository.updateTicket(
         ticketId,
         ticketData
     );
 
-    // Create activity history
     await activityService.createActivity(
         "Ticket updated",
         ticketId,
@@ -108,13 +109,10 @@ const updateTicket = async (ticketId, ticketData, userId) => {
     return updatedTicket;
 };
 
-
 // ==============================
 // Delete Ticket
 // ==============================
 const deleteTicket = async (ticketId, userId) => {
-
-    // Check if ticket exists
     await getTicketById(ticketId);
 
     // Save activity BEFORE deleting ticket
@@ -124,10 +122,8 @@ const deleteTicket = async (ticketId, userId) => {
         userId
     );
 
-    // Delete ticket
     return await ticketRepository.deleteTicket(ticketId);
 };
-
 
 // ==============================
 // Assign Ticket To User
@@ -137,8 +133,6 @@ const assignTicket = async (
     assignedUserId,
     currentUserId
 ) => {
-
-    // Check if ticket exists
     await getTicketById(ticketId);
 
     // Check if assigned user exists
@@ -152,13 +146,20 @@ const assignTicket = async (
         throw error;
     }
 
-    // Assign ticket
+    // Check if assigned user is active
+    if (user.IsActive === false) {
+        const error = new Error(
+            "Cannot assign ticket to an inactive user."
+        );
+        error.statusCode = 400;
+        throw error;
+    }
+
     const ticket = await ticketRepository.assignTicket(
         ticketId,
         assignedUserId
     );
 
-    // Create activity history
     await activityService.createActivity(
         `Ticket assigned to user ${assignedUserId}`,
         ticketId,
@@ -168,11 +169,12 @@ const assignTicket = async (
     return ticket;
 };
 
-
 module.exports = {
     createTicket,
     getTicketById,
     getAllTickets,
+    getTicketsByProjectId,
+    getTicketsByAssignedUser,
     updateTicket,
     deleteTicket,
     assignTicket,

@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import api from "../services/api";
 import { useAuth } from "../context/useAuth";
+import AppSidebar from "../components/AppSidebar";
+import ConfirmModal from "../components/ConfirmModal";
 
 type Project = {
   ProjectID: number;
@@ -29,7 +31,7 @@ const getData = <T,>(response: { data: { data: T } }) => response.data.data;
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { session, user, isInitializing, hasPermission, logout } = useAuth();
+  const { session, user, isInitializing, hasPermission } = useAuth();
   const userId = user?.UserID || 0;
   const [projects, setProjects] = useState<Project[]>([]);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -37,6 +39,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showProjectForm, setShowProjectForm] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [projectForm, setProjectForm] = useState({
@@ -45,6 +48,12 @@ const Dashboard = () => {
     OrganizationID: "",
     OwnerID: String(userId || ""),
   });
+
+  const [modalFieldErrors, setModalFieldErrors] = useState<{
+    Name?: string;
+    OrganizationID?: string;
+    general?: string;
+  }>({});
 
   const can = (permission: string) => hasPermission(permission);
   const isAdmin = session?.roles.includes("Admin") || false;
@@ -55,16 +64,6 @@ const Dashboard = () => {
     ? ticketData
     : ticketData.filter((ticket) => ticket.AssignedTo === userId);
   const tickets = visibleTickets;
-
-  const openModule = (path: string, allowed: boolean) => {
-    if (!allowed) {
-      setError(
-        "Access Denied: you do not have permission to access this feature.",
-      );
-      return;
-    }
-    navigate(`/workspace/${path}`);
-  };
 
   const showAccessError = () => {
     setError("You do not have permission to perform this action.");
@@ -123,6 +122,7 @@ const Dashboard = () => {
       showAccessError();
       return;
     }
+    setModalFieldErrors({});
     setEditingProject(project || null);
     setProjectForm({
       Name: project?.Name || "",
@@ -137,6 +137,21 @@ const Dashboard = () => {
 
   const handleProjectSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    setModalFieldErrors({});
+    const newErrors: typeof modalFieldErrors = {};
+
+    if (!projectForm.Name.trim()) {
+      newErrors.Name = "Project name is required.";
+    }
+    if (!projectForm.OrganizationID) {
+      newErrors.OrganizationID = "Please select an organization.";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setModalFieldErrors(newErrors);
+      return;
+    }
+
     setSaving(true);
     setError("");
 
@@ -156,25 +171,28 @@ const Dashboard = () => {
       setShowProjectForm(false);
       await loadDashboard();
     } catch (requestError: unknown) {
-      setError(
-        axios.isAxiosError(requestError)
-          ? requestError.response?.data?.message || "Unable to save project."
-          : "Unable to save project.",
-      );
+      const errMsg = axios.isAxiosError(requestError)
+        ? requestError.response?.data?.message || "Unable to save project."
+        : "Unable to save project.";
+      setModalFieldErrors({ general: errMsg });
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDeleteProject = async (projectId: number) => {
+  const [projectToDelete, setProjectToDelete] = useState<number | null>(null);
+  const [deletingProject, setDeletingProject] = useState(false);
+
+  const confirmDeleteProject = async () => {
+    if (!projectToDelete) return;
     if (!can("DELETE_PROJECT")) {
       showAccessError();
       return;
     }
-    if (!window.confirm("Delete this project?")) return;
-
+    setDeletingProject(true);
     try {
-      await api.delete(`/projects/${projectId}`);
+      await api.delete(`/projects/${projectToDelete}`);
+      setProjectToDelete(null);
       await loadDashboard();
     } catch (requestError: unknown) {
       setError(
@@ -182,136 +200,79 @@ const Dashboard = () => {
           ? requestError.response?.data?.message || "Unable to delete project."
           : "Unable to delete project.",
       );
+    } finally {
+      setDeletingProject(false);
     }
-  };
-
-  const handleLogout = () => {
-    logout();
-    navigate("/login", { replace: true });
   };
 
   return (
     <div className="dashboard-page">
       {/* ================= SIDEBAR ================= */}
-
-      <aside className="dashboard-sidebar">
-        <div>
-          <div className="dashboard-brand">
-            <div className="dashboard-brand-icon">✓</div>
-
-            <span>Task Management System</span>
-          </div>
-
-          <nav className="dashboard-nav">
-            <button className="dashboard-nav-item active">
-              <span>▦</span>
-              Dashboard
-            </button>
-
-            <button
-              className="dashboard-nav-item"
-              onClick={() => openModule("organizations", true)}
-            >
-              <span>◈</span>
-              Organizations
-            </button>
-
-            {can("VIEW_PROJECT") && (
-              <button
-                className="dashboard-nav-item"
-                onClick={() => openModule("projects", can("VIEW_PROJECT"))}
-              >
-                <span>▣</span>
-                Projects
-              </button>
-            )}
-
-            {can("VIEW_TICKET") && (
-              <button
-                className="dashboard-nav-item"
-                onClick={() => openModule("tasks", can("VIEW_TICKET"))}
-              >
-                <span>✓</span>
-                Tasks
-              </button>
-            )}
-
-            <button
-              className={`dashboard-nav-item ${!can("VIEW_ATTACHMENT") ? "locked" : ""}`}
-              onClick={() => openModule("attachments", can("VIEW_ATTACHMENT"))}
-            >
-              <span>▧</span>
-              Attachments {!can("VIEW_ATTACHMENT") && <small>🔒</small>}
-            </button>
-
-            <button
-              className={`dashboard-nav-item ${!isAdmin ? "locked" : ""}`}
-              onClick={() => openModule("users", isAdmin)}
-            >
-              <span>◉</span>
-              Users {!isAdmin && <small>🔒</small>}
-            </button>
-
-            <button
-              className={`dashboard-nav-item ${!isAdmin ? "locked" : ""}`}
-              onClick={() => openModule("roles", isAdmin)}
-            >
-              <span>◇</span>
-              Roles {!isAdmin && <small>🔒</small>}
-            </button>
-
-            <button
-              className={`dashboard-nav-item ${!isAdmin ? "locked" : ""}`}
-              onClick={() => openModule("permissions", isAdmin)}
-            >
-              <span>⌁</span>
-              Permissions {!isAdmin && <small>🔒</small>}
-            </button>
-
-            <button
-              className="dashboard-nav-item"
-              onClick={() => navigate("/workspace/profile")}
-            >
-              <span>◉</span>
-              My Profile
-            </button>
-          </nav>
-        </div>
-
-        <button className="dashboard-logout" onClick={handleLogout}>
-          <span>↪</span>
-          Logout
-        </button>
-      </aside>
+      <AppSidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
       {/* ================= MAIN CONTENT ================= */}
 
       <main className="dashboard-main">
         <div className="dashboard-header">
-          <div>
+          <div className="dashboard-header-top">
+            <button
+              type="button"
+              className={`dashboard-mobile-menu-button ${sidebarOpen ? "is-open" : ""}`}
+              aria-label={sidebarOpen ? "Close navigation" : "Open navigation"}
+              aria-expanded={sidebarOpen}
+              onClick={() => setSidebarOpen((current) => !current)}
+            >
+              <span aria-hidden="true">
+                <i />
+                <i />
+                <i />
+              </span>
+            </button>
+
+            <div
+              className="dashboard-user clickable-profile"
+              onClick={() => navigate("/workspace/profile")}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  navigate("/workspace/profile");
+                }
+              }}
+              aria-label="View My Profile"
+              title="View My Profile"
+            >
+              <div className="dashboard-avatar">
+                {session?.user.Name?.charAt(0).toUpperCase() || "U"}
+              </div>
+
+              <div className="dashboard-user-info">
+                <strong>{session?.user.Name || "Loading..."}</strong>
+                <span>{session?.roles.join(" / ") || "Workspace Member"}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="dashboard-header-content">
             <div className="dashboard-welcome">Welcome Back</div>
 
             <h1>Dashboard</h1>
 
             <p>Manage your teams, projects, and tasks from one place.</p>
           </div>
-
-          <div className="dashboard-user">
-            <div className="dashboard-avatar">
-              {session?.user.Name?.charAt(0).toUpperCase() || "U"}
-            </div>
-
-            <div>
-              <strong>{session?.user.Name || "Loading..."}</strong>
-              <span>{session?.roles.join(" / ") || "Workspace Member"}</span>
-            </div>
-          </div>
         </div>
 
         {/* ================= STATS ================= */}
 
         <div className="dashboard-stats">
-          <div className="dashboard-stat-card">
+          <div
+            className="dashboard-stat-card clickable"
+            onClick={() => navigate("/workspace/organizations")}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => e.key === "Enter" && navigate("/workspace/organizations")}
+          >
             <div className="stat-icon purple">◈</div>
 
             <div>
@@ -320,7 +281,13 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div className="dashboard-stat-card">
+          <div
+            className={`dashboard-stat-card ${can("VIEW_PROJECT") ? "clickable" : ""}`}
+            onClick={() => can("VIEW_PROJECT") && navigate("/workspace/projects")}
+            role="button"
+            tabIndex={can("VIEW_PROJECT") ? 0 : -1}
+            onKeyDown={(e) => e.key === "Enter" && can("VIEW_PROJECT") && navigate("/workspace/projects")}
+          >
             <div className="stat-icon blue">▣</div>
 
             <div>
@@ -331,7 +298,13 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div className="dashboard-stat-card">
+          <div
+            className={`dashboard-stat-card ${can("VIEW_TICKET") ? "clickable" : ""}`}
+            onClick={() => can("VIEW_TICKET") && navigate("/workspace/tasks")}
+            role="button"
+            tabIndex={can("VIEW_TICKET") ? 0 : -1}
+            onKeyDown={(e) => e.key === "Enter" && can("VIEW_TICKET") && navigate("/workspace/tasks")}
+          >
             <div className="stat-icon green">✓</div>
 
             <div>
@@ -342,7 +315,13 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div className="dashboard-stat-card">
+          <div
+            className={`dashboard-stat-card ${can("VIEW_TICKET") ? "clickable" : ""}`}
+            onClick={() => can("VIEW_TICKET") && navigate("/workspace/tasks")}
+            role="button"
+            tabIndex={can("VIEW_TICKET") ? 0 : -1}
+            onKeyDown={(e) => e.key === "Enter" && can("VIEW_TICKET") && navigate("/workspace/tasks")}
+          >
             <div className="stat-icon orange">◷</div>
 
             <div>
@@ -361,7 +340,11 @@ const Dashboard = () => {
 
         <div className="dashboard-grid">
           <div className="dashboard-panel" id="organizations">
-            <div className="panel-header">
+            <div
+              className="panel-header"
+              style={{ cursor: "pointer" }}
+              onClick={() => navigate("/workspace/organizations")}
+            >
               <div>
                 <h2>Organizations</h2>
                 <p>Manage your organizations and team members.</p>
@@ -378,13 +361,17 @@ const Dashboard = () => {
               </div>
             ) : (
               <div className="dashboard-list">
-                {organizations.slice(0, 5).map((organization) => (
+                {organizations.slice(0, 5).map((organization, index) => (
                   <div
-                    className="dashboard-list-row"
+                    className="dashboard-list-row clickable"
                     key={organization.OrganizationID}
+                    onClick={() => navigate("/workspace/organizations")}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === "Enter" && navigate("/workspace/organizations")}
                   >
                     <strong>{organization.Name}</strong>
-                    <span>#{organization.OrganizationID}</span>
+                    <span>#{index + 1}</span>
                   </div>
                 ))}
               </div>
@@ -394,7 +381,12 @@ const Dashboard = () => {
           <div className="dashboard-panel" id="projects">
             <div className="panel-header">
               <div>
-                <h2>Projects</h2>
+                <h2
+                  style={{ cursor: can("VIEW_PROJECT") ? "pointer" : "default" }}
+                  onClick={() => can("VIEW_PROJECT") && navigate("/workspace/projects")}
+                >
+                  Projects
+                </h2>
                 <p>Keep track of your active projects.</p>
               </div>
 
@@ -431,7 +423,11 @@ const Dashboard = () => {
               <div className="dashboard-list">
                 {projects.slice(0, 5).map((project) => (
                   <div className="dashboard-list-row" key={project.ProjectID}>
-                    <div>
+                    <div
+                      className="clickable"
+                      style={{ cursor: "pointer", flex: 1 }}
+                      onClick={() => navigate("/workspace/projects")}
+                    >
                       <strong>{project.Name}</strong>
                       <span>{project.Description || "No description"}</span>
                     </div>
@@ -443,9 +439,8 @@ const Dashboard = () => {
                       )}
                       {can("DELETE_PROJECT") && (
                         <button
-                          onClick={() =>
-                            void handleDeleteProject(project.ProjectID)
-                          }
+                          type="button"
+                          onClick={() => setProjectToDelete(project.ProjectID)}
                         >
                           Delete
                         </button>
@@ -463,7 +458,12 @@ const Dashboard = () => {
         <div className="dashboard-panel tasks-panel" id="tasks">
           <div className="panel-header">
             <div>
-              <h2>Recent Tasks</h2>
+              <h2
+                style={{ cursor: can("VIEW_TICKET") ? "pointer" : "default" }}
+                onClick={() => can("VIEW_TICKET") && navigate("/workspace/tasks")}
+              >
+                Recent Tasks
+              </h2>
 
               <p>Stay on top of your team's latest work.</p>
             </div>
@@ -490,7 +490,14 @@ const Dashboard = () => {
           ) : (
             <div className="dashboard-list">
               {tickets.slice(0, 6).map((ticket) => (
-                <div className="dashboard-list-row" key={ticket.TaskID}>
+                <div
+                  className="dashboard-list-row clickable"
+                  key={ticket.TaskID}
+                  onClick={() => can("VIEW_TICKET") && navigate("/workspace/tasks")}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === "Enter" && can("VIEW_TICKET") && navigate("/workspace/tasks")}
+                >
                   <div>
                     <strong>{ticket.Title}</strong>
                     <span>{ticket.Priority}</span>
@@ -520,7 +527,7 @@ const Dashboard = () => {
 
         {showProjectForm && (
           <div className="modal-backdrop" role="presentation">
-            <form className="project-modal" onSubmit={handleProjectSubmit}>
+            <form noValidate className="project-modal" onSubmit={handleProjectSubmit}>
               <div className="panel-header">
                 <div>
                   <span className="dashboard-welcome">Projects</span>
@@ -534,15 +541,35 @@ const Dashboard = () => {
                   ×
                 </button>
               </div>
+
+              {modalFieldErrors.general && (
+                <div className="dashboard-notice error" role="alert" style={{ margin: "10px 0" }}>
+                  <span>{modalFieldErrors.general}</span>
+                  <button
+                    type="button"
+                    onClick={() => setModalFieldErrors({ ...modalFieldErrors, general: undefined })}
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+
               <label>
                 Project name
                 <input
                   required
+                  className={modalFieldErrors.Name ? "has-error" : ""}
                   value={projectForm.Name}
-                  onChange={(event) =>
-                    setProjectForm({ ...projectForm, Name: event.target.value })
-                  }
+                  onChange={(event) => {
+                    setProjectForm({ ...projectForm, Name: event.target.value });
+                    if (modalFieldErrors.Name) setModalFieldErrors({ ...modalFieldErrors, Name: undefined });
+                  }}
                 />
+                {modalFieldErrors.Name && (
+                  <div className="field-error-text" role="alert">
+                    <span className="error-bullet">●</span> {modalFieldErrors.Name}
+                  </div>
+                )}
               </label>
               <label>
                 Description
@@ -560,13 +587,16 @@ const Dashboard = () => {
                 Organization
                 <select
                   required
+                  className={modalFieldErrors.OrganizationID ? "has-error" : ""}
                   value={projectForm.OrganizationID}
-                  onChange={(event) =>
+                  onChange={(event) => {
                     setProjectForm({
                       ...projectForm,
                       OrganizationID: event.target.value,
-                    })
-                  }
+                    });
+                    if (modalFieldErrors.OrganizationID)
+                      setModalFieldErrors({ ...modalFieldErrors, OrganizationID: undefined });
+                  }}
                 >
                   <option value="">Select organization</option>
                   {organizations.map((organization) => (
@@ -578,6 +608,11 @@ const Dashboard = () => {
                     </option>
                   ))}
                 </select>
+                {modalFieldErrors.OrganizationID && (
+                  <div className="field-error-text" role="alert">
+                    <span className="error-bullet">●</span> {modalFieldErrors.OrganizationID}
+                  </div>
+                )}
               </label>
               <div className="modal-actions">
                 <button
@@ -598,6 +633,16 @@ const Dashboard = () => {
             </form>
           </div>
         )}
+        {/* ================= CONFIRM DELETE MODAL ================= */}
+        <ConfirmModal
+          isOpen={projectToDelete !== null}
+          title="Delete Project"
+          message="Are you sure you want to permanently delete this project? All associated tasks and assignments will be impacted. This action cannot be undone."
+          confirmText="Delete Project"
+          isLoading={deletingProject}
+          onConfirm={confirmDeleteProject}
+          onCancel={() => setProjectToDelete(null)}
+        />
       </main>
     </div>
   );

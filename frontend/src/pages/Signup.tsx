@@ -2,66 +2,61 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthError, authService } from "../services/authService";
 
-const EyeIcon = ({ visible }: { visible: boolean }) => {
-    if (visible) {
-        return (
-            <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
-            >
+const EyeIcon = ({ off = false }: { off?: boolean }) => (
+    <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-hidden="true"
+    >
+        {off ? (
+            <>
                 <path
-                    d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"
+                    d="M3 3L21 21"
                     stroke="currentColor"
-                    strokeWidth="1.8"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                />
+                <path
+                    d="M10.58 10.58A2 2 0 0 0 13.42 13.42"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                />
+                <path
+                    d="M9.88 5.09A10.94 10.94 0 0 1 12 4.88C17.1 4.88 20.5 9 21.5 12C21.15 13.05 20.36 14.48 19.11 15.82"
+                    stroke="currentColor"
+                    strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                 />
-                <circle
-                    cx="12"
-                    cy="12"
-                    r="3"
+                <path
+                    d="M6.61 6.61C4.75 8.03 3.4 10.23 2.5 12C3.5 15 6.9 19.12 12 19.12C13.4 19.12 14.69 18.83 15.85 18.35"
                     stroke="currentColor"
-                    strokeWidth="1.8"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                 />
-            </svg>
-        );
-    }
-
-    return (
-        <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            aria-hidden="true"
-        >
+            </>
+        ) : (
             <path
-                d="M3 3l18 18"
+                d="M2.5 12C3.5 9 6.9 4.88 12 4.88C17.1 4.88 20.5 9 21.5 12C20.5 15 17.1 19.12 12 19.12C6.9 19.12 3.5 15 2.5 12Z"
                 stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-            />
-            <path
-                d="M10.58 10.59a2 2 0 0 0 2.83 2.83"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-            />
-            <path
-                d="M9.88 5.08A9.94 9.94 0 0 1 12 4.8c6.5 0 10 7.2 10 7.2a18.36 18.36 0 0 1-3.03 3.9M6.61 6.61C3.75 8.58 2 12 2 12s3.5 7.2 10 7.2c1.55 0 2.92-.36 4.11-.91"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
+                strokeWidth="2"
                 strokeLinejoin="round"
             />
-        </svg>
-    );
-};
+        )}
+        {!off && (
+            <circle
+                cx="12"
+                cy="12"
+                r="3"
+                stroke="currentColor"
+                strokeWidth="2"
+            />
+        )}
+    </svg>
+);
 
 const Signup = () => {
     const navigate = useNavigate();
@@ -77,6 +72,13 @@ const Signup = () => {
 
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
+    const [fieldErrors, setFieldErrors] = useState<{
+        name?: string;
+        email?: string;
+        password?: string;
+        confirmPassword?: string;
+        terms?: string;
+    }>({});
     const [loading, setLoading] = useState(false);
 
     const handleSignup = async (e: React.FormEvent) => {
@@ -85,37 +87,54 @@ const Signup = () => {
         setMessage("");
         setError("");
 
-        if (name.trim().length < 2 || !/^\S+@\S+\.\S+$/.test(email)) {
-            setError("Please check the highlighted fields.");
-            return;
+        const newErrors: typeof fieldErrors = {};
+        if (!name.trim()) {
+            newErrors.name = "Full name is required.";
+        } else if (name.trim().length < 2) {
+            newErrors.name = "Full name must be at least 2 characters.";
         }
 
-        if (
-            !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(
-                password
-            )
-        ) {
-            setError(
-                "Password must be 8+ characters with uppercase, lowercase and a number."
-            );
-            return;
+        if (!email.trim()) {
+            newErrors.email = "Email address is required.";
+        } else if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
+            newErrors.email = "Please enter a valid email address (e.g. name@company.com).";
         }
 
-        if (password !== confirmPassword) {
-            setError("Passwords do not match.");
-            return;
+        if (!password) {
+            newErrors.password = "Password is required.";
+        } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(password)) {
+            newErrors.password = "Password must be 8+ characters with uppercase, lowercase, and a number.";
+        }
+
+        if (!confirmPassword) {
+            newErrors.confirmPassword = "Confirm password is required.";
+        } else if (password !== confirmPassword) {
+            newErrors.confirmPassword = "Passwords do not match.";
         }
 
         if (!acceptedTerms) {
-            setError(
-                "Please accept the platform rules before continuing."
-            );
+            newErrors.terms = "Please accept the platform rules before continuing.";
+        }
+
+        if (Object.keys(newErrors).length > 0) {
+            setFieldErrors(newErrors);
             return;
         }
+
+        setFieldErrors({});
+
+        console.log("FRONTEND VALIDATION PASSED");
+        console.log("ABOUT TO SEND SIGNUP REQUEST:", {
+            name,
+            email,
+            dateOfBirth: dateOfBirth || null,
+            acceptedTerms,
+        });
 
         setLoading(true);
 
         try {
+            console.log("CALLING AUTH SERVICE...");
             await authService.signup({
                 name,
                 email,
@@ -223,6 +242,7 @@ const Signup = () => {
                         </p>
 
                         <form
+                            noValidate
                             className="signup-form"
                             onSubmit={handleSignup}
                         >
@@ -233,11 +253,18 @@ const Signup = () => {
                                     type="text"
                                     placeholder="Enter your name"
                                     value={name}
-                                    onChange={(e) =>
-                                        setName(e.target.value)
-                                    }
-                                    required
+                                    className={fieldErrors.name ? "has-error" : ""}
+                                    onChange={(e) => {
+                                        setName(e.target.value);
+                                        if (fieldErrors.name) setFieldErrors({ ...fieldErrors, name: undefined });
+                                        if (error) setError("");
+                                    }}
                                 />
+                                {fieldErrors.name && (
+                                    <div className="field-error-text" role="alert">
+                                        <span className="error-bullet">●</span> {fieldErrors.name}
+                                    </div>
+                                )}
                             </div>
 
                             <div className="signup-field">
@@ -247,17 +274,24 @@ const Signup = () => {
                                     type="email"
                                     placeholder="Enter your email"
                                     value={email}
-                                    onChange={(e) =>
-                                        setEmail(e.target.value)
-                                    }
-                                    required
+                                    className={fieldErrors.email ? "has-error" : ""}
+                                    onChange={(e) => {
+                                        setEmail(e.target.value);
+                                        if (fieldErrors.email) setFieldErrors({ ...fieldErrors, email: undefined });
+                                        if (error) setError("");
+                                    }}
                                 />
+                                {fieldErrors.email && (
+                                    <div className="field-error-text" role="alert">
+                                        <span className="error-bullet">●</span> {fieldErrors.email}
+                                    </div>
+                                )}
                             </div>
 
                             <div className="signup-field">
                                 <label>Password</label>
 
-                                <div className="signup-password-wrapper">
+                                <div className={`signup-password-wrapper ${fieldErrors.password ? "has-error" : ""}`}>
                                     <input
                                         type={
                                             showPassword
@@ -266,10 +300,13 @@ const Signup = () => {
                                         }
                                         placeholder="8+ chars, uppercase, lowercase and number"
                                         value={password}
-                                        onChange={(e) =>
-                                            setPassword(e.target.value)
-                                        }
-                                        required
+                                        className={fieldErrors.password ? "has-error" : ""}
+                                        onChange={(e) => {
+                                            setPassword(e.target.value);
+                                            if (fieldErrors.password) setFieldErrors({ ...fieldErrors, password: undefined });
+                                            if (error) setError("");
+                                        }}
+                                        autoComplete="new-password"
                                     />
 
                                     <button
@@ -286,17 +323,20 @@ const Signup = () => {
                                                 : "Show password"
                                         }
                                     >
-                                        <EyeIcon
-                                            visible={showPassword}
-                                        />
+                                        <EyeIcon off={!showPassword} />
                                     </button>
                                 </div>
+                                {fieldErrors.password && (
+                                    <div className="field-error-text" role="alert">
+                                        <span className="error-bullet">●</span> {fieldErrors.password}
+                                    </div>
+                                )}
                             </div>
 
                             <div className="signup-field">
                                 <label>Confirm Password</label>
 
-                                <div className="signup-password-wrapper">
+                                <div className={`signup-password-wrapper ${fieldErrors.confirmPassword ? "has-error" : ""}`}>
                                     <input
                                         type={
                                             showConfirmPassword
@@ -305,12 +345,15 @@ const Signup = () => {
                                         }
                                         placeholder="Re-enter your password"
                                         value={confirmPassword}
-                                        onChange={(e) =>
+                                        className={fieldErrors.confirmPassword ? "has-error" : ""}
+                                        onChange={(e) => {
                                             setConfirmPassword(
                                                 e.target.value
-                                            )
-                                        }
-                                        required
+                                            );
+                                            if (fieldErrors.confirmPassword) setFieldErrors({ ...fieldErrors, confirmPassword: undefined });
+                                            if (error) setError("");
+                                        }}
+                                        autoComplete="new-password"
                                     />
 
                                     <button
@@ -328,18 +371,19 @@ const Signup = () => {
                                         }
                                     >
                                         <EyeIcon
-                                            visible={
-                                                showConfirmPassword
-                                            }
+                                            off={!showConfirmPassword}
                                         />
                                     </button>
                                 </div>
+                                {fieldErrors.confirmPassword && (
+                                    <div className="field-error-text" role="alert">
+                                        <span className="error-bullet">●</span> {fieldErrors.confirmPassword}
+                                    </div>
+                                )}
                             </div>
 
                             <div className="signup-field">
-                                <label>
-                                    Date of Birth (Optional)
-                                </label>
+                                <label>Date of Birth (Optional)</label>
 
                                 <input
                                     type="date"
@@ -350,24 +394,37 @@ const Signup = () => {
                                 />
                             </div>
 
-                            <label className="policy-check">
+                            <label className={`policy-check ${fieldErrors.terms ? "has-error" : ""}`}>
                                 <input
                                     type="checkbox"
                                     checked={acceptedTerms}
-                                    onChange={(e) =>
+                                    onChange={(e) => {
                                         setAcceptedTerms(
                                             e.target.checked
-                                        )
-                                    }
-                                    required
+                                        );
+                                        if (fieldErrors.terms) setFieldErrors({ ...fieldErrors, terms: undefined });
+                                        if (error) setError("");
+                                    }}
                                 />
 
                                 <span>
-                                    I agree to use workspace data
-                                    responsibly and follow assigned
-                                    access rules.
+                                    I agree to use workspace data responsibly
+                                    and follow assigned access rules.
                                 </span>
                             </label>
+                            {fieldErrors.terms && (
+                                <div className="field-error-text" role="alert" style={{ marginBottom: "16px" }}>
+                                    <span className="error-bullet">●</span> {fieldErrors.terms}
+                                </div>
+                            )}
+
+                            {/* FORM-LEVEL AUTH ERROR */}
+                            {error && (
+                                <div className="auth-form-error" role="alert">
+                                    <span className="auth-form-error-icon">⚠️</span>
+                                    <span>{error}</span>
+                                </div>
+                            )}
 
                             <button
                                 type="submit"
@@ -383,12 +440,6 @@ const Signup = () => {
                         {message && (
                             <div className="signup-success">
                                 {message}
-                            </div>
-                        )}
-
-                        {error && (
-                            <div className="signup-error">
-                                {error}
                             </div>
                         )}
 

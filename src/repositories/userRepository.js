@@ -7,6 +7,7 @@ const findAllUsers = async () => {
             Name: true,
             Email: true,
             DateOfBirth: true,
+            IsActive: true,
         },
     });
 
@@ -40,6 +41,7 @@ const findUserById = async (id) => {
             Name: true,
             Email: true,
             DateOfBirth: true,
+            IsActive: true,
         },
     });
 
@@ -69,297 +71,153 @@ const findUserById = async (id) => {
     };
 };
 
-const deleteUser = async (id) => {
-    const userId = Number(id);
-
-    const organizationOwner = await prisma.organization.findFirst({
+const findUserByEmail = async (email) => {
+    return await prisma.user.findUnique({
         where: {
-            OwnerID: userId,
+            Email: email,
         },
-    });
-
-    if (organizationOwner) {
-        const error = new Error(
-            "Cannot delete user because this user is an organization owner."
-        );
-        error.statusCode = 409;
-        throw error;
-    }
-
-    const projectOwner = await prisma.project.findFirst({
-        where: {
-            OwnerID: userId,
-        },
-    });
-
-    if (projectOwner) {
-        const error = new Error(
-            "Cannot delete user because this user is a project owner."
-        );
-        error.statusCode = 409;
-        throw error;
-    }
-
-    const organizationMember = await prisma.organizationmembers.findFirst({
-        where: {
-            UserID: userId,
-        },
-    });
-
-    if (organizationMember) {
-        const error = new Error(
-            "Cannot delete user because this user is an organization member."
-        );
-        error.statusCode = 409;
-        throw error;
-    }
-
-    const projectMember = await prisma.projectmembers.findFirst({
-        where: {
-            UserID: userId,
-        },
-    });
-
-    if (projectMember) {
-        const error = new Error(
-            "Cannot delete user because this user is a project member."
-        );
-        error.statusCode = 409;
-        throw error;
-    }
-
-    const assignedTask = await prisma.task.findFirst({
-        where: {
-            AssignedTo: userId,
-        },
-    });
-
-    if (assignedTask) {
-        const error = new Error(
-            "Cannot delete user because this user is assigned to a task."
-        );
-        error.statusCode = 409;
-        throw error;
-    }
-
-    const userComment = await prisma.comment.findFirst({
-        where: {
-            UserID: userId,
-        },
-    });
-
-    if (userComment) {
-        const error = new Error(
-            "Cannot delete user because this user has comments in the system."
-        );
-        error.statusCode = 409;
-        throw error;
-    }
-
-    const activity = await prisma.activityhistory.findFirst({
-        where: {
-            UserID: userId,
-        },
-    });
-
-    if (activity) {
-        const error = new Error(
-            "Cannot delete user because this user has activity history."
-        );
-        error.statusCode = 409;
-        throw error;
-    }
-
-    const userRole = await prisma.userrole.findFirst({
-        where: {
-            UserID: userId,
-        },
-    });
-
-    if (userRole) {
-        const error = new Error(
-            "Cannot delete user because this user has a role assigned."
-        );
-        error.statusCode = 409;
-        throw error;
-    }
-
-    return await prisma.user.delete({
-        where: {
-            UserID: userId,
+        select: {
+            UserID: true,
+            Name: true,
+            Email: true,
+            IsActive: true,
         },
     });
 };
 
-const forceDeleteUser = async (id) => {
+const updateUser = async (id, data) => {
     const userId = Number(id);
 
-    return await prisma.$transaction(async (tx) => {
-        // Remove role assignments
-        await tx.userrole.deleteMany({
+    return await prisma.user.update({
+        where: {
+            UserID: userId,
+        },
+        data,
+        select: {
+            UserID: true,
+            Name: true,
+            Email: true,
+            DateOfBirth: true,
+            IsActive: true,
+        },
+    });
+};
+
+const deleteUser = async (id) => {
+    const userId = Number(id);
+
+    const user = await prisma.user.findUnique({
+        where: {
+            UserID: userId,
+        },
+    });
+
+    if (!user) {
+        const error = new Error("User not found.");
+        error.statusCode = 404;
+        throw error;
+    }
+
+    if (!user.IsActive) {
+        const error = new Error("User is already inactive.");
+        error.statusCode = 409;
+        throw error;
+    }
+
+    // Check whether the user has the Admin role
+    const adminRole = await prisma.role.findFirst({
+        where: {
+            Name: "Admin",
+        },
+    });
+
+    if (adminRole) {
+        const userAdminRole = await prisma.userrole.findFirst({
             where: {
                 UserID: userId,
+                RoleID: adminRole.RoleID,
             },
         });
 
-        // Remove organization memberships
-        await tx.organizationmembers.deleteMany({
-            where: {
-                UserID: userId,
-            },
-        });
-
-        // Remove project memberships
-        await tx.projectmembers.deleteMany({
-            where: {
-                UserID: userId,
-            },
-        });
-
-        // Remove comments made by the user
-        await tx.comment.deleteMany({
-            where: {
-                UserID: userId,
-            },
-        });
-
-        // Remove activity history made by the user
-        await tx.activityhistory.deleteMany({
-            where: {
-                UserID: userId,
-            },
-        });
-
-        // Remove tasks assigned to the user
-        await tx.task.deleteMany({
-            where: {
-                AssignedTo: userId,
-            },
-        });
-
-        // Remove projects owned by the user
-        const projects = await tx.project.findMany({
-            where: {
-                OwnerID: userId,
-            },
-            select: {
-                ProjectID: true,
-            },
-        });
-
-        for (const project of projects) {
-            await tx.attachment.deleteMany({
+        // If this user is an Admin, check how many active Admins exist
+        if (userAdminRole) {
+            const activeAdminUserRoles = await prisma.userrole.findMany({
                 where: {
-                    TaskID: {
-                        in: await tx.task
-                            .findMany({
-                                where: {
-                                    ProjectID: project.ProjectID,
-                                },
-                                select: {
-                                    TaskID: true,
-                                },
-                            })
-                            .then((tasks) => tasks.map((task) => task.TaskID)),
+                    RoleID: adminRole.RoleID,
+                },
+            });
+
+            const activeAdminUserIds = activeAdminUserRoles.map(
+                (userRole) => userRole.UserID
+            );
+
+            const activeAdminCount = await prisma.user.count({
+                where: {
+                    UserID: {
+                        in: activeAdminUserIds,
                     },
+                    IsActive: true,
                 },
             });
 
-            await tx.comment.deleteMany({
-                where: {
-                    TaskID: {
-                        in: await tx.task
-                            .findMany({
-                                where: {
-                                    ProjectID: project.ProjectID,
-                                },
-                                select: {
-                                    TaskID: true,
-                                },
-                            })
-                            .then((tasks) => tasks.map((task) => task.TaskID)),
-                    },
-                },
-            });
-
-            await tx.activityhistory.deleteMany({
-                where: {
-                    TaskID: {
-                        in: await tx.task
-                            .findMany({
-                                where: {
-                                    ProjectID: project.ProjectID,
-                                },
-                                select: {
-                                    TaskID: true,
-                                },
-                            })
-                            .then((tasks) => tasks.map((task) => task.TaskID)),
-                    },
-                },
-            });
-
-            await tx.task.deleteMany({
-                where: {
-                    ProjectID: project.ProjectID,
-                },
-            });
-
-            await tx.projectmembers.deleteMany({
-                where: {
-                    ProjectID: project.ProjectID,
-                },
-            });
+            // Do not allow the last active Admin to be deactivated
+            if (activeAdminCount <= 1) {
+                const error = new Error(
+                    "Cannot deactivate the last active Admin."
+                );
+                error.statusCode = 409;
+                throw error;
+            }
         }
+    }
 
-        await tx.project.deleteMany({
-            where: {
-                OwnerID: userId,
-            },
-        });
+    // Soft delete: keep user and all history
+    return await prisma.user.update({
+        where: {
+            UserID: userId,
+        },
+        data: {
+            IsActive: false,
+        },
+    });
+};
 
-        // Remove organizations owned by the user
-        const organizations = await tx.organization.findMany({
-            where: {
-                OwnerID: userId,
-            },
-            select: {
-                OrganizationID: true,
-            },
-        });
+const activateUser = async (id) => {
+    const userId = Number(id);
 
-        for (const organization of organizations) {
-            await tx.project.deleteMany({
-                where: {
-                    OrganizationID: organization.OrganizationID,
-                },
-            });
+    const user = await prisma.user.findUnique({
+        where: {
+            UserID: userId,
+        },
+    });
 
-            await tx.organizationmembers.deleteMany({
-                where: {
-                    OrganizationID: organization.OrganizationID,
-                },
-            });
-        }
+    if (!user) {
+        const error = new Error("User not found.");
+        error.statusCode = 404;
+        throw error;
+    }
 
-        await tx.organization.deleteMany({
-            where: {
-                OwnerID: userId,
-            },
-        });
+    if (user.IsActive) {
+        const error = new Error("User is already active.");
+        error.statusCode = 409;
+        throw error;
+    }
 
-        // Finally delete the user
-        return await tx.user.delete({
-            where: {
-                UserID: userId,
-            },
-        });
+    return await prisma.user.update({
+        where: {
+            UserID: userId,
+        },
+        data: {
+            IsActive: true,
+        },
     });
 };
 
 module.exports = {
     findAllUsers,
     findUserById,
+    findUserByEmail,
+    updateUser,
     deleteUser,
-    forceDeleteUser,
+    activateUser,
 };

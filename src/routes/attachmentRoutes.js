@@ -8,6 +8,10 @@ const upload = require("../middlewares/uploadMiddleware");
 const permissionMiddleware = require("../middlewares/permissionMiddleware");
 
 
+// ==============================
+// Swagger Tag
+// ==============================
+
 /**
  * @swagger
  * tags:
@@ -15,6 +19,10 @@ const permissionMiddleware = require("../middlewares/permissionMiddleware");
  *   description: Ticket Image Attachment APIs
  */
 
+
+// ==============================
+// Upload Attachment
+// ==============================
 
 /**
  * @swagger
@@ -58,6 +66,10 @@ router.post(
 );
 
 
+// ==============================
+// Get Ticket Attachments
+// ==============================
+
 /**
  * @swagger
  * /api/tickets/{ticketId}/attachments:
@@ -84,6 +96,90 @@ router.get(
     authMiddleware,
     permissionMiddleware("VIEW_ATTACHMENT"),
     attachmentController.getTicketAttachments
+);
+
+
+// ==============================
+// Open Attachment
+// ==============================
+
+/**
+ * @swagger
+ * /api/tickets/{ticketId}/attachments/file/{fileName}:
+ *   get:
+ *     summary: Open ticket attachment
+ *     tags: [Attachments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: ticketId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         example: 5
+ *       - in: path
+ *         name: fileName
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: 1789634175877-456197873.jpeg
+ *     responses:
+ *       200:
+ *         description: Attachment file
+ *       404:
+ *         description: Attachment not found
+ */
+router.get(
+    "/:ticketId/attachments/file/:fileName",
+    authMiddleware,
+    permissionMiddleware("VIEW_ATTACHMENT"),
+    attachmentController.getAttachmentFile
+);
+
+
+// ==============================
+// Delete Attachment
+// ==============================
+
+/**
+ * @swagger
+ * /api/tickets/{ticketId}/attachments/{attachmentId}:
+ *   delete:
+ *     summary: Delete ticket attachment
+ *     tags: [Attachments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: ticketId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         example: 8
+ *       - in: path
+ *         name: attachmentId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         example: 3
+ *     responses:
+ *       200:
+ *         description: Attachment deleted successfully
+ *       400:
+ *         description: Invalid attachment or ticket ID
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Permission denied
+ *       404:
+ *         description: Attachment not found
+ */
+router.delete(
+    "/:ticketId/attachments/:attachmentId",
+    authMiddleware,
+    permissionMiddleware("DELETE_ATTACHMENT"),
+    attachmentController.deleteAttachment
 );
 
 

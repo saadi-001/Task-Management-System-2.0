@@ -6,14 +6,12 @@ const projectController = require("../controllers/projectController");
 const authMiddleware = require("../middlewares/authMiddleware");
 const authorize = require("../middlewares/permissionMiddleware");
 
-
 /**
  * @swagger
  * tags:
  *   name: Projects
  *   description: Project Management APIs
  */
-
 
 /**
  * @swagger
@@ -54,7 +52,6 @@ router.post(
     projectController.createProject
 );
 
-
 /**
  * @swagger
  * /api/projects:
@@ -71,6 +68,111 @@ router.get(
     projectController.getAllProjects
 );
 
+/**
+ * @swagger
+ * /api/projects/organization/{organizationId}:
+ *   get:
+ *     summary: Get projects by organization ID
+ *     tags: [Projects]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: organizationId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         example: 1
+ *     responses:
+ *       200:
+ *         description: Organization projects fetched successfully
+ *       400:
+ *         description: Invalid organization ID
+ *       401:
+ *         description: Unauthorized
+ */
+router.get(
+    "/organization/:organizationId",
+    authMiddleware,
+    authorize("VIEW_PROJECT"),
+    projectController.getProjectsByOrganizationId
+);
+
+/**
+ * @swagger
+ * /api/projects/{id}/link:
+ *   put:
+ *     summary: Link an existing project to an organization
+ *     tags: [Projects]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         example: 1
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - OrganizationID
+ *             properties:
+ *               OrganizationID:
+ *                 type: integer
+ *                 example: 5
+ *     responses:
+ *       200:
+ *         description: Project linked to organization successfully
+ *       400:
+ *         description: Invalid project or organization ID
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Project not found
+ */
+router.put(
+    "/:id/link",
+    authMiddleware,
+    authorize("UPDATE_PROJECT"),
+    projectController.linkProjectToOrganization
+);
+
+/**
+ * @swagger
+ * /api/projects/{id}/unlink:
+ *   put:
+ *     summary: Unlink project from organization
+ *     tags: [Projects]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         example: 1
+ *     responses:
+ *       200:
+ *         description: Project unlinked from organization successfully
+ *       400:
+ *         description: Invalid project ID
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Project not found
+ */
+router.put(
+    "/:id/unlink",
+    authMiddleware,
+    authorize("UPDATE_PROJECT"),
+    projectController.unlinkProjectFromOrganization
+);
 
 /**
  * @swagger
@@ -87,18 +189,7 @@ router.get(
  *         schema:
  *           type: integer
  *         example: 1
- */
-router.get(
-    "/:id",
-    authMiddleware,
-    authorize("VIEW_PROJECT"),
-    projectController.getProjectById
-);
-
-
-/**
- * @swagger
- * /api/projects/{id}:
+ *
  *   put:
  *     summary: Update project
  *     tags: [Projects]
@@ -130,18 +221,7 @@ router.get(
  *               OwnerID:
  *                 type: integer
  *                 example: 8
- */
-router.put(
-    "/:id",
-    authMiddleware,
-    authorize("UPDATE_PROJECT"),
-    projectController.updateProject
-);
-
-
-/**
- * @swagger
- * /api/projects/{id}:
+ *
  *   delete:
  *     summary: Delete project
  *     tags: [Projects]
@@ -155,12 +235,25 @@ router.put(
  *           type: integer
  *         example: 1
  */
+router.get(
+    "/:id",
+    authMiddleware,
+    authorize("VIEW_PROJECT"),
+    projectController.getProjectById
+);
+
+router.put(
+    "/:id",
+    authMiddleware,
+    authorize("UPDATE_PROJECT"),
+    projectController.updateProject
+);
+
 router.delete(
     "/:id",
     authMiddleware,
     authorize("DELETE_PROJECT"),
     projectController.deleteProject
 );
-
 
 module.exports = router;

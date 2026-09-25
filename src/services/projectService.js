@@ -23,6 +23,13 @@ const getAllProjects = async () => {
     return await projectRepository.findAllProjects();
 };
 
+// Get Projects by Organization
+const getProjectsByOrganizationId = async (organizationId) => {
+    return await projectRepository.findProjectsByOrganizationId(
+        organizationId
+    );
+};
+
 // Update Project
 const updateProject = async (projectId, projectData) => {
     await getProjectById(projectId);
@@ -31,6 +38,27 @@ const updateProject = async (projectId, projectData) => {
         projectId,
         projectData
     );
+};
+
+// Link Existing Project to Organization
+const linkProjectToOrganization = async (
+    projectId,
+    organizationId
+) => {
+    await getProjectById(projectId);
+
+    return await projectRepository.updateProject(projectId, {
+        OrganizationID: organizationId,
+    });
+};
+
+// Unlink Project from Organization
+const unlinkProjectFromOrganization = async (projectId) => {
+    await getProjectById(projectId);
+
+    return await projectRepository.updateProject(projectId, {
+        OrganizationID: null,
+    });
 };
 
 // Delete Project
@@ -44,6 +72,9 @@ module.exports = {
     createProject,
     getProjectById,
     getAllProjects,
+    getProjectsByOrganizationId,
     updateProject,
+    linkProjectToOrganization,
+    unlinkProjectFromOrganization,
     deleteProject,
 };

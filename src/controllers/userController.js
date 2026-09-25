@@ -37,13 +37,35 @@ const getUserById = async (req, res) => {
     }
 };
 
+const updateUserController = async (req, res) => {
+    try {
+        const user = await userService.updateUser(
+            req.params.id,
+            req.body
+        );
+
+        return res.status(200).json({
+            success: true,
+            message: "User updated successfully.",
+            data: user,
+        });
+    } catch (error) {
+        console.error("Update User Error:", error);
+
+        return res.status(error.statusCode || 500).json({
+            success: false,
+            message: error.message || "Failed to update user",
+        });
+    }
+};
+
 const deleteUser = async (req, res) => {
     try {
         await userService.removeUser(req.params.id);
 
         return res.status(200).json({
             success: true,
-            message: "User deleted successfully",
+            message: "User deactivated successfully",
         });
     } catch (error) {
         console.error("Delete User Error:", error);
@@ -55,27 +77,24 @@ const deleteUser = async (req, res) => {
     }
 };
 
-const forceDeleteUser = async (req, res) => {
+const activateUserController = async (req, res, next) => {
     try {
-        await userService.forceRemoveUser(req.params.id);
+        const user = await userService.activateUser(req.params.id);
 
         return res.status(200).json({
             success: true,
-            message: "Test user and related test data deleted successfully",
+            message: "User activated successfully.",
+            data: user,
         });
     } catch (error) {
-        console.error("Force Delete User Error:", error);
-
-        return res.status(error.statusCode || 500).json({
-            success: false,
-            message: error.message || "Failed to force delete user",
-        });
+        next(error);
     }
 };
 
 module.exports = {
     getAllUsers,
     getUserById,
+    updateUserController,
     deleteUser,
-    forceDeleteUser,
+    activateUserController,
 };

@@ -1,7 +1,5 @@
 const prisma = require("../config/prisma");
 
-
-
 // ==============================
 // Create Role
 // ==============================
@@ -12,8 +10,6 @@ const createRole = async (roleData) => {
         }
     });
 };
-
-
 
 // ==============================
 // Get All Roles
@@ -26,8 +22,6 @@ const getRoles = async () => {
     });
 };
 
-
-
 // ==============================
 // Get Role By ID
 // ==============================
@@ -38,8 +32,6 @@ const getRoleById = async (id) => {
         }
     });
 };
-
-
 
 // ==============================
 // Update Role
@@ -55,8 +47,6 @@ const updateRole = async (id, roleData) => {
     });
 };
 
-
-
 // ==============================
 // Delete Role
 // ==============================
@@ -68,8 +58,6 @@ const deleteRole = async (id) => {
     });
 };
 
-
-
 // ==============================
 // Assign Permission To Role
 // ==============================
@@ -78,19 +66,16 @@ const assignPermissionToRole = async (
     permissionName
 ) => {
 
-    // Find permission by name
     const permission = await prisma.permission.findUnique({
         where: {
             Name: permissionName
         }
     });
 
-    // Permission does not exist
     if (!permission) {
         throw new Error("Permission not found");
     }
 
-    // Create role-permission relationship
     return await prisma.rolepermission.create({
         data: {
             RoleID: Number(roleId),
@@ -98,8 +83,6 @@ const assignPermissionToRole = async (
         }
     });
 };
-
-
 
 // ==============================
 // Remove Permission From Role
@@ -116,8 +99,6 @@ const removePermissionFromRole = async (
     });
 };
 
-
-
 // ==============================
 // Assign Role To User
 // ==============================
@@ -125,15 +106,31 @@ const assignRoleToUser = async (
     userId,
     roleId
 ) => {
+
+    const numericUserId = Number(userId);
+    const numericRoleId = Number(roleId);
+
+    // Check whether this role is already assigned
+    const existingUserRole = await prisma.userrole.findFirst({
+        where: {
+            UserID: numericUserId,
+            RoleID: numericRoleId
+        }
+    });
+
+    // Already assigned — do not create a duplicate
+    if (existingUserRole) {
+        return existingUserRole;
+    }
+
+    // Create new user-role relationship
     return await prisma.userrole.create({
         data: {
-            UserID: Number(userId),
-            RoleID: Number(roleId)
+            UserID: numericUserId,
+            RoleID: numericRoleId
         }
     });
 };
-
-
 
 // ==============================
 // Remove Role From User
@@ -150,8 +147,6 @@ const removeRoleFromUser = async (
     });
 };
 
-
-
 // ==============================
 // Get User Roles
 // ==============================
@@ -163,19 +158,15 @@ const getUserRoles = async (userId) => {
     });
 };
 
-
 // ==============================
 // Get Permissions Assigned To Role
 // ==============================
-
 const getRolePermissions = async (roleId) => {
 
     const rolePermissions = await prisma.rolepermission.findMany({
-
         where: {
             RoleID: Number(roleId)
         }
-
     });
 
     const permissionIds = rolePermissions.map(
@@ -183,19 +174,15 @@ const getRolePermissions = async (roleId) => {
     );
 
     return await prisma.permission.findMany({
-
         where: {
             PermissionID: {
                 in: permissionIds
             }
         },
-
         orderBy: {
             PermissionID: "asc"
         }
-
     });
-
 };
 
 // ==============================
@@ -241,13 +228,10 @@ const getUserPermissions = async (userId) => {
     });
 };
 
-
 // ==============================
 // Export
 // ==============================
-
 module.exports = {
-
     createRole,
     getRoles,
     getRoleById,
@@ -260,6 +244,4 @@ module.exports = {
     removeRoleFromUser,
     getUserRoles,
     getUserPermissions
-
-
 };

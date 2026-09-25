@@ -1,8 +1,11 @@
 const bcrypt = require("bcrypt");
+
 const crypto = require("crypto");
 
 const authRepository = require("../repositories/authRepository");
+
 const roleRepository = require("../repositories/roleRepository");
+
 const { generateToken } = require("../utils/jwt");
 
 // ==========================
@@ -28,9 +31,11 @@ const buildSession = async (user) => {
             Email: user.Email,
             DateOfBirth: user.DateOfBirth,
         },
+
         roles: roles
             .filter(Boolean)
             .map((role) => role.Name),
+
         permissions: userPermissions.map(
             (permission) => permission.Name
         ),
@@ -56,6 +61,7 @@ const validateSignupData = ({
         const error = new Error(
             "Name must contain at least 2 characters"
         );
+
         error.statusCode = 400;
         throw error;
     }
@@ -64,10 +70,15 @@ const validateSignupData = ({
     // Email Validation
     // ==========================
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email || "")) {
+    if (
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+            email || ""
+        )
+    ) {
         const error = new Error(
             "Enter a valid email address"
         );
+
         error.statusCode = 400;
         throw error;
     }
@@ -84,6 +95,7 @@ const validateSignupData = ({
         const error = new Error(
             "Password must be 8+ characters with uppercase, lowercase, and a number"
         );
+
         error.statusCode = 400;
         throw error;
     }
@@ -99,11 +111,13 @@ const validateSignupData = ({
             const error = new Error(
                 "Please provide a valid date of birth"
             );
+
             error.statusCode = 400;
             throw error;
         }
 
         // Minimum age = 13
+
         const minimumAgeDate = new Date();
 
         minimumAgeDate.setFullYear(
@@ -111,10 +125,12 @@ const validateSignupData = ({
         );
 
         // User is younger than 13
+
         if (birthDate > minimumAgeDate) {
             const error = new Error(
                 "You must be at least 13 years old"
             );
+
             error.statusCode = 400;
             throw error;
         }
@@ -128,6 +144,7 @@ const validateSignupData = ({
         const error = new Error(
             "You must accept the platform rules before creating an account"
         );
+
         error.statusCode = 400;
         throw error;
     }
@@ -139,6 +156,7 @@ const validateSignupData = ({
 
 const signup = async (userData) => {
     // Validate data
+
     validateSignupData(userData);
 
     // ==========================
@@ -154,6 +172,7 @@ const signup = async (userData) => {
         const error = new Error(
             "Email already exists"
         );
+
         error.statusCode = 409;
         throw error;
     }
@@ -174,12 +193,15 @@ const signup = async (userData) => {
     const createdUser =
         await authRepository.createUser({
             Name: userData.name.trim(),
+
             Email: String(userData.email)
                 .trim()
                 .toLowerCase(),
+
             Password: hashedPassword,
 
             // DOB is optional
+
             DateOfBirth: userData.dateOfBirth
                 ? new Date(
                       `${userData.dateOfBirth}T00:00:00.000Z`
@@ -201,6 +223,7 @@ const signup = async (userData) => {
 
 const login = async (email, password) => {
     // Find user by email
+
     const user =
         await authRepository.findUserByEmail(
             String(email || "").trim()
@@ -210,11 +233,13 @@ const login = async (email, password) => {
         const error = new Error(
             "Invalid email or password"
         );
+
         error.statusCode = 401;
         throw error;
     }
 
     // Compare password
+
     const isPasswordCorrect =
         await bcrypt.compare(
             password,
@@ -225,11 +250,13 @@ const login = async (email, password) => {
         const error = new Error(
             "Invalid Password"
         );
+
         error.statusCode = 401;
         throw error;
     }
 
     // Generate JWT token
+
     const token = generateToken(user);
 
     return {
@@ -252,6 +279,7 @@ const getSession = async (userId) => {
         const error = new Error(
             "User not found"
         );
+
         error.statusCode = 404;
         throw error;
     }
@@ -265,6 +293,7 @@ const getSession = async (userId) => {
 
 const forgotPassword = async (email) => {
     // Find user by email
+
     const user =
         await authRepository.findUserByEmail(
             String(email || "").trim()
@@ -274,20 +303,24 @@ const forgotPassword = async (email) => {
         const error = new Error(
             "User not found"
         );
+
         error.statusCode = 404;
         throw error;
     }
 
     // Generate random reset token
+
     const resetToken =
         crypto.randomBytes(32).toString("hex");
 
     // Token expires after 15 minutes
+
     const resetTokenExpiry = new Date(
         Date.now() + 15 * 60 * 1000
     );
 
     // Save token in database
+
     await authRepository.saveResetToken(
         user.UserID,
         resetToken,
@@ -316,6 +349,7 @@ const resetPassword = async (
         const error = new Error(
             "Invalid reset token"
         );
+
         error.statusCode = 400;
         throw error;
     }
@@ -327,6 +361,7 @@ const resetPassword = async (
         const error = new Error(
             "Reset token has expired"
         );
+
         error.statusCode = 400;
         throw error;
     }

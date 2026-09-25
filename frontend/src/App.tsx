@@ -11,35 +11,36 @@ import { AuthProvider } from "./context/AuthContext";
 import AppToast from "./components/AppToast";
 
 function App() {
-    return (
-        <BrowserRouter>
-            <AuthProvider>
-            <AppToast />
-
-            <Routes>
-
-                <Route path="/login" element={<Login />} />
-
-                <Route path="/signup" element={<Signup />} />
-
-                <Route path="/dashboard" element={ <ProtectedRoute> <Dashboard /> </ProtectedRoute> } />
-
-                <Route path="/workspace/:module" element={ <ProtectedRoute> <Workspace /> </ProtectedRoute> } />
-
-                <Route path="/forgot-password" element={<ForgotPassword />} />
-
-                <Route path="/reset-password" element={<ResetPassword />} />
-
-                <Route
-                    path="/"
-                    element={<Navigate to="/login" replace />}
-                />
-
-            </Routes>
-
-            </AuthProvider>
-        </BrowserRouter>
-    );
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <AppToast />
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/workspace/:module"
+            element={
+              <ProtectedRoute>
+                <Workspace />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
+  );
 }
 
 export default App;
