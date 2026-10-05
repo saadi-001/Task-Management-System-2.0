@@ -8,14 +8,39 @@ const routes = require("./routes");
 
 const app = express();
 
+const allowedOrigins = [
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "https://commodity-crust-womanly.ngrok-free.dev",
+    "https://task-management-system-2-0.vercel.app",
+];
+
 app.use(
     cors({
-        origin: [
-            "http://localhost:5173",
-            "https://commodity-crust-womanly.ngrok-free.dev",
-            "https://task-management-system-2-0.vercel.app",
-        ],
+        origin: (origin, callback) => {
+            // Allow mobile apps, curl, Postman or server-to-server with no origin
+            if (!origin) return callback(null, true);
+
+            if (
+                allowedOrigins.includes(origin) ||
+                origin.endsWith(".vercel.app") ||
+                origin.startsWith("http://localhost:") ||
+                origin.startsWith("http://127.0.0.1:")
+            ) {
+                return callback(null, true);
+            }
+
+            return callback(null, true);
+        },
         credentials: true,
+        methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allowedHeaders: [
+            "Content-Type",
+            "Authorization",
+            "ngrok-skip-browser-warning",
+            "Accept",
+            "X-Requested-With",
+        ],
     }),
 );
 
