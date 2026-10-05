@@ -48,6 +48,8 @@ services:
     image: mysql:8.0
 
     container_name: task-management-mysql
+    ports:
+      - "3307:3306"
 
     environment:
 

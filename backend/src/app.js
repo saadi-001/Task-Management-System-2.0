@@ -13,11 +13,11 @@ app.use(
         origin: [
             "http://localhost:5173",
             "https://commodity-crust-womanly.ngrok-free.dev",
+            "https://task-management-system-2-0.vercel.app",
         ],
         credentials: true,
     }),
 );
-
 
 app.use(express.json({ limit: "20mb" }));
 
