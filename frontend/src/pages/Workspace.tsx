@@ -103,6 +103,24 @@ const displayNumber = (
   return index >= 0 ? index + 1 : Number(item[key]);
 };
 
+const primaryIdKeyForModule = (module: ModuleKey) =>
+  module === "organizations"
+    ? "OrganizationID"
+    : module === "projects"
+      ? "ProjectID"
+      : module === "tasks"
+        ? "TaskID"
+        : module === "users"
+          ? "UserID"
+          : module === "roles"
+            ? "RoleID"
+            : "PermissionID";
+
+const detailLabel = (key: string) =>
+  key
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/ID$/, " ID");
+
 const userRolesOf = (item: ApiItem): string[] => {
   const raw = item.Roles ?? item.Role ?? item.UserRoles ?? [];
 
@@ -2377,6 +2395,12 @@ const Workspace = () => {
                   {selected.key === "organizations" ? (
                     <div className="detail-grid">
                       <div>
+                        <small>Record No.</small>
+                        <strong>
+                          #{displayNumber(details, "OrganizationID", items)}
+                        </strong>
+                      </div>
+                      <div>
                         <small>Organization</small>
                         <strong>{textOf(details, "Name") || "—"}</strong>
                       </div>
@@ -2392,20 +2416,26 @@ const Workspace = () => {
                         <small>Theme</small>
                         <strong>{textOf(details, "Theme") || "—"}</strong>
                       </div>
-                      <div>
-                        <small>Owner ID</small>
-                        <strong>{textOf(details, "OwnerID") || "—"}</strong>
-                      </div>
                     </div>
                   ) : (
                     <div className="detail-grid">
                       {Object.entries(details)
-                        .filter(([key]) => key !== "Password")
+                        .filter(([key]) =>
+                          key !== "Password" &&
+                          (key === primaryIdKeyForModule(selected.key) ||
+                            !/(?:ID|AssignedTo|OwnerID)$/.test(key)),
+                        )
                         .map(([key, value]) => (
                           <div key={key}>
-                            <small>{key}</small>
+                            <small>
+                              {key === primaryIdKeyForModule(selected.key)
+                                ? "Record No."
+                                : detailLabel(key)}
+                            </small>
                             <strong>
-                              {typeof value === "object"
+                              {key === primaryIdKeyForModule(selected.key)
+                                ? `#${displayNumber(details, key, items)}`
+                                : typeof value === "object"
                                 ? JSON.stringify(value)
                                 : String(value ?? "—")}
                             </strong>

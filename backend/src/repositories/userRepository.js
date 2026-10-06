@@ -2,6 +2,9 @@ const prisma = require("../config/prisma");
 
 const findAllUsers = async () => {
     const users = await prisma.user.findMany({
+        orderBy: {
+            UserID: "asc",
+        },
         select: {
             UserID: true,
             Name: true,

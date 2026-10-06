@@ -25,7 +25,9 @@ const findTicketById = async (ticketId) => {
 // Get All Tickets
 // ==============================
 const findAllTickets = async () => {
-    return await prisma.task.findMany();
+    return await prisma.task.findMany({
+        orderBy: { TaskID: "asc" },
+    });
 };
 
 // ==============================

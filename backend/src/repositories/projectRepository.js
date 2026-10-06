@@ -19,7 +19,9 @@ const findProjectById = async (projectId) => {
 
 // Get all Projects
 const findAllProjects = async () => {
-    return await prisma.project.findMany();
+    return await prisma.project.findMany({
+        orderBy: { ProjectID: "asc" },
+    });
 };
 
 // Get Projects by Organization

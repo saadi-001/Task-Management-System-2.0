@@ -36,7 +36,9 @@ const createOrganization = async (organizationData) => {
 
 const getOrganizations = async () => {
 
-    return await prisma.organization.findMany();
+    return await prisma.organization.findMany({
+        orderBy: { OrganizationID: "asc" }
+    });
 
 };
 
