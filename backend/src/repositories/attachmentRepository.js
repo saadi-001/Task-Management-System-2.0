@@ -1,4 +1,5 @@
 const prisma = require("../config/prisma");
+const { resetAutoIncrementIfEmpty } = require("../utils/resetAutoIncrement");
 
 // ==============================
 // Create Attachment
@@ -38,11 +39,15 @@ const findAttachmentById = async (attachmentId) => {
 // Delete Attachment
 // ==============================
 const deleteAttachment = async (attachmentId) => {
-    return await prisma.attachment.delete({
+    return (async () => {
+    const result = await prisma.attachment.delete({
         where: {
             AttachmentID: attachmentId,
         },
     });
+    await resetAutoIncrementIfEmpty('attachment', 'attachment');
+    return result;
+  })()
 };
 
 

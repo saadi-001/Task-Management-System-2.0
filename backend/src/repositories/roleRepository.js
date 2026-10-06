@@ -1,4 +1,5 @@
 const prisma = require("../config/prisma");
+const { resetAutoIncrementIfEmpty } = require("../utils/resetAutoIncrement");
 
 // ==============================
 // Create Role
@@ -51,11 +52,15 @@ const updateRole = async (id, roleData) => {
 // Delete Role
 // ==============================
 const deleteRole = async (id) => {
-    return await prisma.role.delete({
+    return (async () => {
+    const result = await prisma.role.delete({
         where: {
             RoleID: Number(id)
         }
     });
+    await resetAutoIncrementIfEmpty('role', 'role');
+    return result;
+  })()
 };
 
 // ==============================
@@ -91,12 +96,16 @@ const removePermissionFromRole = async (
     roleId,
     permissionId
 ) => {
-    return await prisma.rolepermission.deleteMany({
+    return (async () => {
+    const result = await prisma.rolepermission.deleteMany({
         where: {
             RoleID: Number(roleId),
             PermissionID: Number(permissionId)
         }
     });
+    await resetAutoIncrementIfEmpty('rolepermission', 'rolepermission');
+    return result;
+  })()
 };
 
 // ==============================
@@ -139,12 +148,16 @@ const removeRoleFromUser = async (
     userId,
     roleId
 ) => {
-    return await prisma.userrole.deleteMany({
+    return (async () => {
+    const result = await prisma.userrole.deleteMany({
         where: {
             UserID: Number(userId),
             RoleID: Number(roleId)
         }
     });
+    await resetAutoIncrementIfEmpty('userrole', 'userrole');
+    return result;
+  })()
 };
 
 // ==============================

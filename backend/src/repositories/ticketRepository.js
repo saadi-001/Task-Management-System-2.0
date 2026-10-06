@@ -1,4 +1,5 @@
 const prisma = require("../config/prisma");
+const { resetAutoIncrementIfEmpty } = require("../utils/resetAutoIncrement");
 
 // ==============================
 // Create Ticket
@@ -68,11 +69,15 @@ const updateTicket = async (ticketId, ticketData) => {
 // Delete Ticket
 // ==============================
 const deleteTicket = async (ticketId) => {
-    return await prisma.task.delete({
+    return (async () => {
+    const result = await prisma.task.delete({
         where: {
             TaskID: ticketId,
         },
     });
+    await resetAutoIncrementIfEmpty('task', 'task');
+    return result;
+  })()
 };
 
 // ==============================

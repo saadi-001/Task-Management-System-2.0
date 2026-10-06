@@ -1,4 +1,5 @@
 const prisma = require("../config/prisma");
+const { resetAutoIncrementIfEmpty } = require("../utils/resetAutoIncrement");
 
 
 // ==============================
@@ -59,11 +60,15 @@ const updatePermission = async (
 // Delete Permission
 // ==============================
 const deletePermission = async (id) => {
-    return await prisma.permission.delete({
+    return (async () => {
+    const result = await prisma.permission.delete({
         where: {
             PermissionID: Number(id)
         }
     });
+    await resetAutoIncrementIfEmpty('permission', 'permission');
+    return result;
+  })()
 };
 
 

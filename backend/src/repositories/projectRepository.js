@@ -1,4 +1,5 @@
 const prisma = require("../config/prisma");
+const { resetAutoIncrementIfEmpty } = require("../utils/resetAutoIncrement");
 
 // Create Project
 const createProject = async (projectData) => {
@@ -42,11 +43,15 @@ const updateProject = async (projectId, projectData) => {
 
 // Delete Project
 const deleteProject = async (projectId) => {
-    return await prisma.project.delete({
+    return (async () => {
+    const result = await prisma.project.delete({
         where: {
             ProjectID: projectId,
         },
     });
+    await resetAutoIncrementIfEmpty('project', 'project');
+    return result;
+  })()
 };
 
 module.exports = {

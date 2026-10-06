@@ -1,4 +1,5 @@
 const prisma = require("../config/prisma");
+const { resetAutoIncrementIfEmpty } = require("../utils/resetAutoIncrement");
 
 // ==============================
 // Create Organization
@@ -117,7 +118,8 @@ const updateOrganization = async (id, organizationData) => {
 
 const deleteOrganization = async (id) => {
 
-    return await prisma.organization.delete({
+    return (async () => {
+    const result = await prisma.organization.delete({
 
         where: {
 
@@ -126,6 +128,9 @@ const deleteOrganization = async (id) => {
         }
 
     });
+    await resetAutoIncrementIfEmpty('organization', 'organization');
+    return result;
+  })()
 
 };
 
@@ -173,7 +178,8 @@ const removeUserFromOrganization = async (
 
 ) => {
 
-    return await prisma.organizationmembers.deleteMany({
+    return (async () => {
+    const result = await prisma.organizationmembers.deleteMany({
 
         where: {
 
@@ -184,6 +190,9 @@ const removeUserFromOrganization = async (
         }
 
     });
+    await resetAutoIncrementIfEmpty('organizationmembers', 'organizationmembers');
+    return result;
+  })()
 
 };
 
