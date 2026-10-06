@@ -96,11 +96,16 @@ const displayNumber = (
   key: string,
   list: ApiItem[],
 ) => {
-  const index = list.findIndex(
+  const visibleItems =
+    key === "UserID"
+      ? list.filter((entry) => entry.IsActive !== false)
+      : list;
+
+  const index = visibleItems.findIndex(
     (entry) => Number(entry[key]) === Number(item[key]),
   );
 
-  return index >= 0 ? index + 1 : Number(item[key]);
+  return index >= 0 ? index + 1 : "—";
 };
 
 const primaryIdKeyForModule = (module: ModuleKey) =>
@@ -1925,8 +1930,7 @@ const Workspace = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredItems.map((item, index) => {
-                      const rowNumber = index + 1;
+                    {filteredItems.map((item) => {
                       const itemId = idOf(
                         item,
                         selected.key === "organizations"
@@ -1941,6 +1945,11 @@ const Workspace = () => {
                                   ? "RoleID"
                                   : "PermissionID",
                       );
+                      const rowNumber = displayNumber(
+                        item,
+                        primaryIdKeyForModule(selected.key),
+                        items,
+                      );
                       const name = textOf(
                         item,
                         selected.key === "tasks" ? "Title" : "Name",
@@ -1951,7 +1960,7 @@ const Workspace = () => {
                           : canUpdate;
                       const removable = canDelete;
                       return (
-                        <tr key={`${selected.key}-${itemId}-${index}`}>
+                        <tr key={`${selected.key}-${itemId}`}>
                           <td className="col-name" data-label={selected.key === "users" ? "User" : selected.key === "tasks" ? "Task" : selected.key === "projects" ? "Project" : selected.key === "organizations" ? "Organization" : selected.key === "roles" ? "Role Name" : selected.key === "permissions" ? "Permission" : "Name"}>
                             <strong>
                               {selected.key === "permissions"
