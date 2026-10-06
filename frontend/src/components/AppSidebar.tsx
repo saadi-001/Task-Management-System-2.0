@@ -33,6 +33,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
 
   const isAdmin = session?.roles.includes("Admin") || false;
   const can = (permission?: string) => (permission ? hasPermission(permission) : true);
+  const canViewUsers = isAdmin || can("VIEW_USER");
 
   const closeSidebar = () => setSidebarOpen(false);
 
@@ -141,46 +142,43 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
               {!can("VIEW_ATTACHMENT") && <span className="locked-icon"><IconLock /></span>}
             </button>
 
-            {can("VIEW_USER") && (
-              <button
-                type="button"
-                className={`dashboard-nav-item ${isModule("users") ? "active" : ""}`}
-                onClick={() => handleNav("/workspace/users", can("VIEW_USER"))}
-                title="Users"
-              >
-                <span className="nav-item-icon"><IconUsers /></span>
-                <span className="nav-item-text">Users</span>
-              </button>
-            )}
+            <button
+              type="button"
+              className={`dashboard-nav-item ${isModule("users") ? "active" : ""} ${!canViewUsers ? "locked" : ""}`}
+              onClick={() => handleNav("/workspace/users", canViewUsers)}
+              title="Users"
+            >
+              <span className="nav-item-icon"><IconUsers /></span>
+              <span className="nav-item-text">Users</span>
+              {!canViewUsers && <span className="locked-icon"><IconLock /></span>}
+            </button>
           </nav>
 
-          {isAdmin && (
-            <>
-              <div className="sidebar-section-divider"></div>
-              <div className="sidebar-section-label">ADMINISTRATION</div>
-              <nav className="dashboard-nav">
-                <button
-                  type="button"
-                  className={`dashboard-nav-item ${isModule("roles") ? "active" : ""}`}
-                  onClick={() => handleNav("/workspace/roles", isAdmin)}
-                  title="Roles"
-                >
-                  <span className="nav-item-icon"><IconRoles /></span>
-                  <span className="nav-item-text">Roles</span>
-                </button>
+          <div className="sidebar-section-divider"></div>
+          <div className="sidebar-section-label">ADMINISTRATION</div>
+          <nav className="dashboard-nav">
+            <button
+              type="button"
+              className={`dashboard-nav-item ${isModule("roles") ? "active" : ""} ${!isAdmin ? "locked" : ""}`}
+              onClick={() => handleNav("/workspace/roles", isAdmin)}
+              title="Roles"
+            >
+              <span className="nav-item-icon"><IconRoles /></span>
+              <span className="nav-item-text">Roles</span>
+              {!isAdmin && <span className="locked-icon"><IconLock /></span>}
+            </button>
 
-                <button
-                  type="button"
-                  className={`dashboard-nav-item ${isModule("permissions") ? "active" : ""}`}
-                  onClick={() => handleNav("/workspace/permissions", isAdmin)}
-                  title="Permissions"
-                >
-                  <span className="nav-item-icon"><IconPermissions /></span>
-                  <span className="nav-item-text">Permissions</span>
-                </button>
-              </nav>
-            </>
-          )}
+            <button
+              type="button"
+              className={`dashboard-nav-item ${isModule("permissions") ? "active" : ""} ${!isAdmin ? "locked" : ""}`}
+              onClick={() => handleNav("/workspace/permissions", isAdmin)}
+              title="Permissions"
+            >
+              <span className="nav-item-icon"><IconPermissions /></span>
+              <span className="nav-item-text">Permissions</span>
+              {!isAdmin && <span className="locked-icon"><IconLock /></span>}
+            </button>
+          </nav>
 
         </div>
 

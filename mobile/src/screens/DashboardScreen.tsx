@@ -120,11 +120,15 @@ export default function DashboardScreen() {
           <TaskProgressBar total={stats.tickets || 0} done={stats.doneTickets || 0} inProgress={stats.inProgressTickets || 0} />
 
           
+          <SectionHeader title="METRICS" />
+          <View style={styles.statsGrid}>
             <StatCard title="Orgs" value={stats.organizations} iconName="briefcase" colorTheme={theme.colors.stats.purple} onPress={() => navigation.navigate('Organizations')} />
             <StatCard title="Projects" value={stats.projects} iconName="folder" colorTheme={theme.colors.stats.blue} onPress={() => navigation.navigate('Projects')} />
             <StatCard title="Tasks" value={stats.tickets} iconName="check-square" colorTheme={theme.colors.stats.green} onPress={() => navigation.navigate('Tickets')} />
             <StatCard title="Users" value={stats.users} iconName="users" colorTheme={theme.colors.stats.orange} onPress={() => navigation.navigate('Users')} />
-          
+          </View>
+
+          <SectionHeader title="SYSTEM ACTIONS" />
           <View style={styles.actionsGrid}>
             <QuickActionCard title="Deploy Project" iconName="folder-plus" onPress={() => navigation.navigate('CreateProject')} />
             <QuickActionCard title="Initialize Task" iconName="file-plus" onPress={() => navigation.navigate('CreateTicket')} />

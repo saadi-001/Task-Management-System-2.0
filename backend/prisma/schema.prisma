@@ -213,3 +213,48 @@ model userrole {
   @@unique([UserID, RoleID], map: "UserRole_UserID_RoleID_key")
   @@index([RoleID], map: "UserRole_RoleID_fkey")
 }
+
+// ==============================
+// Notification System
+// ==============================
+
+model devicetoken {
+  DeviceTokenID Int      @id @default(autoincrement())
+  UserID        Int
+  Token         String   @unique(map: "DeviceToken_Token_key")
+  Platform      String?  
+  DeviceId      String?
+  IsActive      Boolean  @default(true)
+  CreatedAt     DateTime @default(now())
+  UpdatedAt     DateTime @updatedAt
+
+  @@index([UserID], map: "DeviceToken_UserID_fkey")
+  @@map("devicetoken")
+}
+
+model notificationpreference {
+  PreferenceID Int      @id @default(autoincrement())
+  UserID       Int      @unique(map: "NotificationPreference_UserID_key")
+  PushEnabled  Boolean  @default(true)
+  EmailEnabled Boolean  @default(false)
+  TicketEvents String?  @db.Text
+  ProjectEvents String? @db.Text
+  SystemEvents String?  @db.Text
+
+  @@map("notificationpreference")
+}
+
+model notification {
+  NotificationID Int      @id @default(autoincrement())
+  UserID         Int
+  Type           String   
+  Title          String
+  Body           String
+  EntityType     String?  
+  EntityID       Int?
+  IsRead         Boolean  @default(false)
+  CreatedAt      DateTime @default(now())
+
+  @@index([UserID], map: "Notification_UserID_fkey")
+  @@map("notification")
+}

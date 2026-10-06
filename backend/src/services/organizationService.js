@@ -1,5 +1,5 @@
 const organizationRepository = require("../repositories/organizationRepository");
-
+const notificationService = require("./notificationService");
 
 // ==============================
 // Create Organization
@@ -80,12 +80,18 @@ const assignUserToOrganization = async (
     role
 ) => {
 
-    return await organizationRepository.assignUserToOrganization(
+    const result = await organizationRepository.assignUserToOrganization(
         organizationId,
         userId,
         role
     );
+    
+    const organization = await organizationRepository.getOrganizationById(organizationId);
+    if (organization) {
+        await notificationService.userAddedToOrganization(organization, userId, role);
+    }
 
+    return result;
 };
 
 
@@ -96,12 +102,19 @@ const removeUserFromOrganization = async (
     organizationId,
     userId
 ) => {
-
-    return await organizationRepository.removeUserFromOrganization(
+    
+    const organization = await organizationRepository.getOrganizationById(organizationId);
+    
+    const result = await organizationRepository.removeUserFromOrganization(
         organizationId,
         userId
     );
+    
+    if (organization) {
+        await notificationService.userRemovedFromOrganization(organization, userId);
+    }
 
+    return result;
 };
 
 

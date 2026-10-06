@@ -1,6 +1,7 @@
 const ticketRepository = require("../repositories/ticketRepository");
 const authRepository = require("../repositories/authRepository");
 const activityService = require("./activityService");
+const notificationService = require("./notificationService");
 
 // ==============================
 // Allowed Ticket Status Workflow
@@ -24,6 +25,10 @@ const createTicket = async (ticketData, userId) => {
         ticket.TaskID,
         userId
     );
+
+    if (ticket.AssignedTo && ticket.AssignedTo !== userId) {
+        await notificationService.ticketAssigned(ticket, ticket.AssignedTo, userId);
+    }
 
     return ticket;
 };
@@ -71,6 +76,7 @@ const updateTicket = async (ticketId, ticketData, userId) => {
     const existingTicket = await getTicketById(ticketId);
 
     // Check status workflow only when Status is being changed
+    let statusChanged = false;
     if (ticketData.Status) {
         const currentStatus = existingTicket.Status;
         const newStatus = ticketData.Status;
@@ -92,6 +98,7 @@ const updateTicket = async (ticketId, ticketData, userId) => {
                 error.statusCode = 400;
                 throw error;
             }
+            statusChanged = true;
         }
     }
 
@@ -105,6 +112,10 @@ const updateTicket = async (ticketId, ticketData, userId) => {
         ticketId,
         userId
     );
+
+    if (statusChanged) {
+        await notificationService.ticketStatusChanged(updatedTicket, userId, "User");
+    }
 
     return updatedTicket;
 };
@@ -165,6 +176,10 @@ const assignTicket = async (
         ticketId,
         currentUserId
     );
+
+    if (assignedUserId !== currentUserId) {
+        await notificationService.ticketAssigned(ticket, assignedUserId, currentUserId);
+    }
 
     return ticket;
 };

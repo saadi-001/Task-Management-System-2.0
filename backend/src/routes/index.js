@@ -8,7 +8,7 @@ const projectRoutes = require("./projectRoutes");
 const ticketRoutes = require("./ticketRoutes");
 const attachmentRoutes = require("./attachmentRoutes");
 const userRoutes = require("./userRoutes");
-
+const notificationRoutes = require("./notificationRoutes");
 
 const router = express.Router();
 
@@ -94,5 +94,12 @@ router.use(
     userRoutes
 );
 
+// ==============================
+// Notification Routes
+// ==============================
+router.use(
+    "/notifications",
+    notificationRoutes
+);
 
 module.exports = router;

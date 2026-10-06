@@ -1,15 +1,12 @@
 import * as SecureStore from 'expo-secure-store';
 
 // Expo injects variables starting with EXPO_PUBLIC_ via process.env.
-// We use the ngrok URL as a fallback instead of localhost since localhost points to the physical phone itself.
-const API_URL = process.env.EXPO_PUBLIC_API_URL || "https://commodity-crust-womanly.ngrok-free.dev/api";
+const API_URL = process.env.EXPO_PUBLIC_API_URL || "https://20.6.104.150.sslip.io/api";
 
 export const fetchApi = async (endpoint: string, options: RequestInit = {}, isFormData: boolean = false) => {
   const url = `${API_URL}${endpoint}`;
   
-  const defaultHeaders: Record<string, string> = {
-    "ngrok-skip-browser-warning": "true",
-  };
+  const defaultHeaders: Record<string, string> = {};
 
   if (!isFormData) {
     defaultHeaders["Content-Type"] = "application/json";
