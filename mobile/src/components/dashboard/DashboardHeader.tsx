@@ -19,7 +19,7 @@ interface Props {
 export default function DashboardHeader({ userName = 'Agent', role = 'Member' }: Props) {
   const { showAlert } = useAlert();
   const navigation = useNavigation<any>();
-  const { theme, themeOption, setThemeOption } = useThemeContext();
+  const { theme } = useThemeContext();
   const { logout } = useAuth();
   const styles = getStyles(theme);
   
@@ -108,15 +108,7 @@ export default function DashboardHeader({ userName = 'Agent', role = 'Member' }:
           </View>
         </View>
 
-        {/* Right Side: Theme & Notification */}
-        <View style={{flexDirection: 'row', alignItems: 'center'}}>
-          <TouchableOpacity 
-            style={[styles.bellButton, { marginRight: 8 }]} 
-            activeOpacity={0.7} 
-            onPress={() => setThemeOption(themeOption === 'futuristic' ? 'system' : 'futuristic')}
-          >
-            <Feather name="zap" size={22} color={theme.colors.primary} />
-          </TouchableOpacity>
+        {/* Right Side: Notification Bell */}
         <TouchableOpacity 
           style={styles.bellButton} 
           activeOpacity={0.7} 
@@ -134,7 +126,6 @@ export default function DashboardHeader({ userName = 'Agent', role = 'Member' }:
             </View>
           )}
         </TouchableOpacity>
-        </View>
       </View>
     </Animated.View>
   );

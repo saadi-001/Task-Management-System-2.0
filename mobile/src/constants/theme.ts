@@ -79,34 +79,6 @@ export const lightColors: ThemeColors = {
   }
 };
 
-
-export const futuristicColors: ThemeColors = {
-  primary: '#00F0FF', // Cyberpunk Neon Cyan
-  primaryGlow: 'rgba(0, 240, 255, 0.4)',
-  background: '#09090F', // Deep Void Space
-  surface: 'rgba(16, 20, 45, 0.65)', // Glassy Hologram
-  surfaceHighlight: 'rgba(30, 35, 70, 0.8)',
-  textPrimary: '#E0F7FA', // Icy White
-  textSecondary: '#8B9BB4', // Stardust Blue
-  textMuted: 'rgba(139, 155, 180, 0.5)',
-  border: 'rgba(0, 240, 255, 0.25)', // Thin Neon Borders
-  borderHighlight: 'rgba(176, 38, 255, 0.5)', // Hyper Violet
-  error: '#FF003C', // Cyber Red
-  errorBg: 'rgba(255, 0, 60, 0.15)',
-  success: '#39FF14', // Neon Green
-  successBg: 'rgba(57, 255, 20, 0.15)',
-  iconBg: 'rgba(0, 240, 255, 0.1)',
-  glassFill: ['rgba(0, 240, 255, 0.05)', 'rgba(176, 38, 255, 0.02)'],
-  glassGlow: 'rgba(176, 38, 255, 0.08)',
-  glassBorder: 'rgba(0, 240, 255, 0.4)',
-  stats: {
-    purple: { color: '#B026FF', bg: 'rgba(176, 38, 255, 0.15)' },
-    blue: { color: '#00F0FF', bg: 'rgba(0, 240, 255, 0.15)' },
-    green: { color: '#39FF14', bg: 'rgba(57, 255, 20, 0.15)' },
-    orange: { color: '#FCEE09', bg: 'rgba(252, 238, 9, 0.15)' },
-  }
-};
-
 export const commonTheme = {
   spacing: {
     xs: 4, sm: 8, md: 16, lg: 24, xl: 32, gutter: 20,
@@ -123,9 +95,8 @@ export const commonTheme = {
   }
 };
 
-export const createTheme = (isDark: boolean, isFuturistic: boolean = false) => {
-  let colors = isDark ? darkColors : lightColors;
-  if (isFuturistic) colors = futuristicColors;
+export const createTheme = (isDark: boolean) => {
+  const colors = isDark ? darkColors : lightColors;
   return {
     colors,
     isDark,
@@ -157,5 +128,4 @@ export const createTheme = (isDark: boolean, isFuturistic: boolean = false) => {
 };
 
 export type AppTheme = ReturnType<typeof createTheme>;
-export const isFuturisticTheme = (theme: AppTheme) => theme.colors.primary === '#00F0FF';
 

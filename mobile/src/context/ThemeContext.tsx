@@ -3,7 +3,7 @@ import { useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createTheme, AppTheme } from '../constants/theme';
 
-export type ThemeOption = 'light' | 'dark' | 'system' | 'futuristic';
+export type ThemeOption = 'light' | 'dark' | 'system';
 
 interface ThemeContextData {
   theme: AppTheme;
@@ -20,7 +20,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   useEffect(() => {
     AsyncStorage.getItem('themeOption').then((saved) => {
-      if (saved && ['light', 'dark', 'system', 'futuristic'].includes(saved)) {
+      if (saved && ['light', 'dark', 'system'].includes(saved)) {
         setThemeOptionState(saved as ThemeOption);
       }
       setIsReady(true);
@@ -33,8 +33,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const isDark = themeOption === 'system' ? (systemColorScheme === 'dark') : (themeOption === 'dark');
-  const isFuturistic = themeOption === 'futuristic';
-  const theme = createTheme(isDark, isFuturistic);
+  const theme = createTheme(isDark);
 
   if (!isReady) return null;
 
