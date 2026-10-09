@@ -1,7 +1,8 @@
-﻿import React from 'react';
+import React from 'react';
 import { View, StyleSheet, Platform, TouchableOpacity } from 'react-native';
 import { createBottomTabNavigator, BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Feather } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import DashboardScreen from '../screens/DashboardScreen';
 import ProjectsScreen from '../screens/ProjectsScreen';
 import TicketsScreen from '../screens/TicketsScreen';
@@ -14,6 +15,7 @@ const Tab = createBottomTabNavigator();
 function CustomTabBar({ state, descriptors, navigation, theme, styles }: BottomTabBarProps & { theme: AppTheme, styles: any }) {
   return (
     <View style={styles.tabBarContainer}>
+      <BlurView intensity={theme.isDark ? 50 : 80} tint={theme.isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
       <View style={styles.tabBarContent}>
         {state.routes.map((route, index) => {
           const { options } = descriptors[route.key];
@@ -44,14 +46,13 @@ function CustomTabBar({ state, descriptors, navigation, theme, styles }: BottomT
               accessibilityState={isFocused ? { selected: true } : {}}
               onPress={onPress}
               style={styles.tabItem}
-              activeOpacity={0.8}
+              activeOpacity={0.7}
             >
               <View style={[styles.iconWrapper, isFocused ? styles.iconActive : styles.iconInactive]}>
                 <Feather 
                   name={iconName} 
-                  size={22} 
+                  size={24} 
                   color={isFocused ? theme.colors.primary : theme.colors.textSecondary} 
-                  style={isFocused ? styles.iconNeon : undefined}
                 />
               </View>
             </TouchableOpacity>
@@ -94,52 +95,39 @@ export default function MainTabNavigator() {
 const getStyles = (theme: AppTheme) => StyleSheet.create({
   tabBarContainer: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 28 : 20,
-    left: 24,
-    right: 24,
-    height: 68,
-    borderRadius: 34,
-    borderWidth: 1,
-    backgroundColor: theme.isDark ? '#040D12' : '#FFFFFF', 
-    ...theme.shadows.glass,
-    shadowColor: theme.colors.primary,
-    shadowOpacity: 0.6,
-    shadowRadius: 15,
-    elevation: 20,
-    borderColor: theme.colors.primary,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: Platform.OS === 'ios' ? 88 : 70, // iOS style height
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderColor: theme.isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+    overflow: 'hidden',
+    backgroundColor: theme.isDark ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.5)',
   },
   tabBarContent: {
     flex: 1,
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    paddingTop: 12,
     justifyContent: 'space-around',
-    paddingHorizontal: 8,
+    paddingHorizontal: 16,
   },
   tabItem: {
     flex: 1,
-    height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
   },
   iconWrapper: {
-    width: 48,
-    height: 48,
+    width: 44,
+    height: 44,
     justifyContent: 'center',
     alignItems: 'center',
   },
   iconActive: {
-    backgroundColor: theme.colors.primaryGlow,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: theme.colors.borderHighlight,
+    backgroundColor: theme.isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+    borderRadius: 22,
   },
   iconInactive: {
     backgroundColor: 'transparent',
   },
-  iconNeon: {
-    shadowColor: theme.colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 8,
-  }
 });
