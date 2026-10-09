@@ -1,0 +1,3 @@
+﻿  async deleteAttachment(ticketId: number, attachmentId: number): Promise<{ success: boolean }> {
+    return await fetchApi(`/tickets/${ticketId}/attachments/${attachmentId}`, { method: 'DELETE' });
+  },

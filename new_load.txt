@@ -1,0 +1,22 @@
+﻿  const loadData = async () => {
+    if (!ticketId) return;
+    try {
+      setLoading(true); setError(null);
+      const [ticketRes, usersRes, attachRes] = await Promise.all([
+        ticketService.getTicket(ticketId),
+        userService.getUsers().catch(() => ({ data: [] })),
+        ticketService.getAttachments(ticketId).catch(() => ({ data: [] }))
+      ]);
+      
+      const ticketData = ticketRes.data;
+      if (ticketData) {
+        ticketData.Attachments = attachRes?.data || [];
+        setTicket(ticketData);
+      }
+      if (usersRes?.data) setUsers(usersRes.data);
+    } catch (err) {
+      setError('Failed to load task data.');
+    } finally {
+      setLoading(false);
+    }
+  };

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Platform } from 'react-native';
-import { useRoute, useNavigation } from '@react-navigation/native';
+import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useCallback } from 'react';
 import { Feather } from '@expo/vector-icons';
 import { projectService, Project } from '../services/projectService';
 import { ticketService, Ticket } from '../services/ticketService';
@@ -35,11 +36,11 @@ export default function ProjectDetailsScreen() {
       setLoading(true); setError(null);
       const [projRes, tickRes] = await Promise.all([
         projectService.getProject(projectId),
-        ticketService.getTickets()
+        ticketService.getTicketsByProject(projectId)
       ]);
       setProject(projRes.data);
       if (tickRes.data) {
-        setTickets(tickRes.data.filter((t: Ticket) => t.ProjectID === projectId));
+        setTickets(tickRes.data);
       }
     } catch (err) {
       setError('Failed to load deployment details.');

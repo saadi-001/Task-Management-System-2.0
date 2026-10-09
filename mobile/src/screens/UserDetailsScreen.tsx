@@ -22,7 +22,7 @@ export default function UserDetailsScreen() {
 
   useEffect(() => {
     if (userId) loadData();
-    else setError('Invalid Identity Code');
+    else setError('Invalid User ID');
   }, [userId]);
 
   const loadData = async () => {
@@ -37,7 +37,7 @@ export default function UserDetailsScreen() {
       if (userRes && userRes.success) {
         setUser(userRes.data);
       } else {
-        throw new Error('Failed to decrypt identity.');
+        throw new Error('Failed to load user profile.');
       }
 
       if (tasksRes?.data) {
@@ -72,7 +72,7 @@ export default function UserDetailsScreen() {
     }
   };
 
-  if (loading) return <LoadingScreen message="Decrypting Personnel File..." />;
+  if (loading) return <LoadingScreen message="Loading User Profile..." />;
   if (error || !user) return (
     <View style={styles.centerContainer}>
       <Text style={styles.errorText}>{error || 'User not found'}</Text>

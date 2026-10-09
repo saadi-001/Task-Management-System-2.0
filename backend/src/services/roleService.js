@@ -1,4 +1,5 @@
 const roleRepository = require("../repositories/roleRepository");
+const notificationService = require("./notificationService");
 
 
 // ==============================
@@ -52,10 +53,16 @@ const assignPermissionToRole = async (
     permissionName
 ) => {
 
-    return await roleRepository.assignPermissionToRole(
+    const result = await roleRepository.assignPermissionToRole(
         roleId,
         permissionName
     );
+    const role = await roleRepository.getRoleById(roleId);
+    const userIds = await roleRepository.getUserIdsForRole(roleId);
+    await Promise.all(userIds.map((userId) =>
+        notificationService.permissionsChanged(userId, role?.Name || "assigned")
+    ));
+    return result;
 
 };
 
@@ -68,10 +75,16 @@ const removePermissionFromRole = async (
     permissionId
 ) => {
 
-    return await roleRepository.removePermissionFromRole(
+    const result = await roleRepository.removePermissionFromRole(
         roleId,
         permissionId
     );
+    const role = await roleRepository.getRoleById(roleId);
+    const userIds = await roleRepository.getUserIdsForRole(roleId);
+    await Promise.all(userIds.map((userId) =>
+        notificationService.permissionsChanged(userId, role?.Name || "assigned")
+    ));
+    return result;
 
 };
 
@@ -96,10 +109,13 @@ const assignRoleToUser = async (
     roleId
 ) => {
 
-    return await roleRepository.assignRoleToUser(
+    const result = await roleRepository.assignRoleToUser(
         userId,
         roleId
     );
+    const role = await roleRepository.getRoleById(roleId);
+    await notificationService.roleChanged(userId, role?.Name || "selected", true);
+    return result;
 
 };
 
@@ -112,10 +128,15 @@ const removeRoleFromUser = async (
     roleId
 ) => {
 
-    return await roleRepository.removeRoleFromUser(
+    const role = await roleRepository.getRoleById(roleId);
+    const result = await roleRepository.removeRoleFromUser(
         userId,
         roleId
     );
+    if (result.count > 0) {
+        await notificationService.roleChanged(userId, role?.Name || "selected", false);
+    }
+    return result;
 
 };
 

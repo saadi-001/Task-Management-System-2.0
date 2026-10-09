@@ -18,7 +18,7 @@ export default function LoginScreen({ navigation }: { navigation: LoginScreenNav
   const styles = getStyles(theme);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<{email?: string, password?: string, global?: string}>({});
   const [loading, setLoading] = useState(false);
   
   const { loginUser } = useAuth();
@@ -29,9 +29,22 @@ export default function LoginScreen({ navigation }: { navigation: LoginScreenNav
   }, []);
 
   const handleLogin = async () => {
-    setError(null);
-    if (!email || !password) {
-      setError('Please enter both email and password.');
+    setErrors({});
+    let newErrors: any = {};
+    
+    if (!email) {
+      newErrors.email = 'Email is required';
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        newErrors.email = 'Please enter a valid email address';
+      }
+    }
+    
+    if (!password) newErrors.password = 'Password is required';
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
 
@@ -41,10 +54,10 @@ export default function LoginScreen({ navigation }: { navigation: LoginScreenNav
       if (res && res.token && res.user) {
         await loginUser(res.token, res.user, res.roles, res.permissions);
       } else {
-        setError('Invalid initialization sequence.');
+        setErrors({ global: 'Invalid email or password.' });
       }
     } catch (err: any) {
-      setError(err.message || 'Login failed. Please try again.');
+      setErrors({ global: err.message || 'Login failed. Please try again.' });
     } finally {
       setLoading(false);
     }
@@ -70,26 +83,26 @@ export default function LoginScreen({ navigation }: { navigation: LoginScreenNav
           </Animated.View>
 
           <Animated.View style={[styles.formContainer, { opacity: fadeAnim }]}>
-            {error && (
+            {errors.global && (
               <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>{error}</Text>
+                <Text style={styles.errorText}>{errors.global}</Text>
               </View>
             )}
 
             <AppInput 
-              label="System ID / Email" 
+              label="Email" 
               placeholder="Enter your email" 
               keyboardType="email-address" 
               autoCapitalize="none" 
               value={email} 
-              onChangeText={setEmail} 
+              onChangeText={(t) => {setEmail(t); setErrors({...errors, email: undefined});}} 
             />
             <AppInput 
-              label="Passcode" 
+              label="Password" 
               placeholder="Enter your password" 
               secureTextEntry 
               value={password} 
-              onChangeText={setPassword} 
+              onChangeText={(t) => {setPassword(t); setErrors({...errors, password: undefined});}} 
             />
 
             <AppButton title="LOGIN" onPress={handleLogin} loading={loading} style={{ marginTop: 24 }} />

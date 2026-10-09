@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+﻿import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authService, User } from '../services/authService';
 
 interface AuthContextData {
@@ -33,7 +33,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const sessionRes = await authService.getSession();
         if (sessionRes && sessionRes.success) {
           setUser(sessionRes.data.user || sessionRes.data);
-          // Wait, session API usually returns roles/permissions too
           setRoles(sessionRes.data.roles || sessionRes.roles || []);
           setPermissions(sessionRes.data.permissions || sessionRes.permissions || []);
         } else {
@@ -79,4 +78,3 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 };
 
 export const useAuth = () => useContext(AuthContext);
-

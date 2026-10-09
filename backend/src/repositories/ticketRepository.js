@@ -14,11 +14,15 @@ const createTicket = async (ticketData) => {
 // Get Ticket by ID
 // ==============================
 const findTicketById = async (ticketId) => {
-    return await prisma.task.findUnique({
-        where: {
-            TaskID: ticketId,
-        },
+    const task = await prisma.task.findUnique({
+        where: { TaskID: ticketId }
     });
+    if (task) {
+        task.Attachments = await prisma.attachment.findMany({
+            where: { TaskID: ticketId }
+        });
+    }
+    return task;
 };
 
 // ==============================

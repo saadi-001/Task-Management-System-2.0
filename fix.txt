@@ -1,0 +1,3 @@
+﻿  async getAttachments(ticketId: number): Promise<{ success: boolean; data: any[] }> {
+    return await fetchApi(`/tickets/${ticketId}/attachments`, { method: 'GET' });
+  },

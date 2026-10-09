@@ -171,7 +171,8 @@ const updateProject = async (req, res) => {
 
         const project = await projectService.updateProject(
             projectId,
-            getProjectData(req.body)
+            getProjectData(req.body),
+            req.user.UserID
         );
 
         return res.status(200).json({

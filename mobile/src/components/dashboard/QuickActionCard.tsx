@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+﻿import React, { useRef } from 'react';
 import { View, Text, StyleSheet, TouchableWithoutFeedback, Animated } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -9,14 +9,15 @@ interface QuickActionProps {
   title: string;
   iconName: keyof typeof Feather.glyphMap;
   onPress: () => void;
+  description?: string;
 }
 
-export default function QuickActionCard({ title, iconName, onPress }: QuickActionProps) {
+export default function QuickActionCard({ title, iconName, onPress, description }: QuickActionProps) {
   const { theme } = useThemeContext();
   const styles = getStyles(theme);
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
-  const handlePressIn = () => Animated.spring(scaleAnim, { toValue: 0.94, useNativeDriver: true }).start();
+  const handlePressIn = () => Animated.spring(scaleAnim, { toValue: 0.97, useNativeDriver: true }).start();
   const handlePressOut = () => Animated.spring(scaleAnim, { toValue: 1, friction: 5, tension: 40, useNativeDriver: true }).start();
 
   return (
@@ -29,9 +30,15 @@ export default function QuickActionCard({ title, iconName, onPress }: QuickActio
           end={{ x: 1, y: 1 }}
         />
         <View style={styles.iconContainer}>
-          <Feather name={iconName} size={20} color={theme.colors.textPrimary} />
+          <Feather name={iconName} size={22} color={theme.colors.primary} />
         </View>
-        <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{title}</Text>
+        <View style={styles.textContainer}>
+          <Text style={styles.title} numberOfLines={1}>{title}</Text>
+          {description && <Text style={styles.description} numberOfLines={1}>{description}</Text>}
+        </View>
+        <View style={styles.arrowContainer}>
+          <Feather name="chevron-right" size={20} color={theme.colors.textSecondary} />
+        </View>
       </Animated.View>
     </TouchableWithoutFeedback>
   );
@@ -39,30 +46,47 @@ export default function QuickActionCard({ title, iconName, onPress }: QuickActio
 
 const getStyles = (theme: AppTheme) => StyleSheet.create({
   card: {
-    width: '48%',
+    width: '100%',
     backgroundColor: theme.colors.surface,
     borderRadius: theme.radius.lg,
     padding: theme.spacing.md,
-    marginBottom: theme.spacing.md,
+    marginBottom: 10,
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: theme.colors.border,
+    shadowColor: theme.colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
     overflow: 'hidden',
   },
   iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 16,
     backgroundColor: theme.colors.iconBg,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 16,
+  },
+  textContainer: {
+    flex: 1,
+    justifyContent: 'center',
   },
   title: {
     ...theme.typography.body,
-    fontWeight: '600',
-    flex: 1,
+    fontWeight: '700',
     color: theme.colors.textPrimary,
+    marginBottom: 2,
+  },
+  description: {
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    fontWeight: '500',
+  },
+  arrowContainer: {
+    paddingLeft: 8,
   },
 });

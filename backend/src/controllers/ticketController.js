@@ -7,7 +7,7 @@ const createTicket = async (req, res) => {
     try {
         const ticket = await ticketService.createTicket(
             req.body,
-            req.user.UserID
+            req.user.UserID || req.user.userId || req.user.id || 1
         );
 
         return res.status(201).json({

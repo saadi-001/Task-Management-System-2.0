@@ -1,18 +1,25 @@
 import React, { useEffect, useState } from 'react';
+import { useAlert } from '../context/AlertContext';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Platform } from 'react-native';
-import { useRoute, useNavigation } from '@react-navigation/native';
+import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useCallback } from 'react';
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as DocumentPicker from 'expo-document-picker';
+import * as SecureStore from 'expo-secure-store';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
 import { ticketService, Ticket } from '../services/ticketService';
 import { userService, User } from '../services/userService';
 import { useThemeContext } from '../context/ThemeContext';
 import { AppTheme } from '../constants/theme';
 import LoadingScreen from '../components/common/LoadingScreen';
 import AppButton from '../components/common/AppButton';
+import ConfirmModal from '../components/common/ConfirmModal';
 import UpdateTicketModal from '../components/ticket/UpdateTicketModal';
 
 export default function TicketDetailsScreen() {
+  const { showAlert } = useAlert();
   const { theme } = useThemeContext();
   const styles = getStyles(theme);
   const route = useRoute<any>();
@@ -20,12 +27,15 @@ export default function TicketDetailsScreen() {
   const ticketId = route.params?.ticketId;
 
   const [ticket, setTicket] = useState<Ticket | null>(null);
+  const [attachments, setAttachments] = useState<any[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [attToDelete, setAttToDelete] = useState<any>(null);
 
   useEffect(() => {
     loadData();
@@ -35,12 +45,17 @@ export default function TicketDetailsScreen() {
     if (!ticketId) return;
     try {
       setLoading(true); setError(null);
-      const [ticketRes, usersRes] = await Promise.all([
+      const [ticketRes, usersRes, attachmentsRes] = await Promise.all([
         ticketService.getTicket(ticketId),
-        userService.getUsers().catch(() => ({ data: [] }))
+        userService.getUsers().catch(() => ({ data: [] })),
+        // Attachments have their own protected endpoint. Do not rely on the
+        // ticket response embedding them, because older deployed backends do
+        // not include that relation.
+        ticketService.getAttachments(ticketId).catch(() => ({ data: [] })),
       ]);
       setTicket(ticketRes.data);
       if (usersRes?.data) setUsers(usersRes.data);
+      setAttachments(attachmentsRes?.data || ticketRes.data.Attachments || []);
     } catch (err) {
       setError('Failed to load task data.');
     } finally {
@@ -55,10 +70,10 @@ export default function TicketDetailsScreen() {
       const file = res.assets[0];
       setUploading(true);
       await ticketService.uploadAttachment(ticketId, file.uri, file.name, file.mimeType || 'application/octet-stream');
-      Alert.alert('Success', 'Asset uploaded successfully');
+      showAlert({ title: 'Success', message: 'Asset uploaded successfully', type: 'success', cancelText: null });
       loadData();
     } catch (err) {
-      Alert.alert('Upload Failed', 'System rejected the asset upload.');
+      showAlert({ title: 'Upload Failed', message: 'System rejected the asset upload.', type: 'error', cancelText: null });
     } finally {
       setUploading(false);
     }
@@ -67,60 +82,94 @@ export default function TicketDetailsScreen() {
   const handleUpdateSave = async (newStatus: string, newAssigneeId: number | null) => {
     try {
       setUpdating(true);
-      const promises = [];
+      let changed = false;
+
+      // Update status if changed
       if (newStatus !== ticket?.Status) {
-        promises.push(ticketService.updateTicket(ticketId, { Status: newStatus }));
+        await ticketService.updateTicket(ticketId, { Status: newStatus });
+        changed = true;
       }
-      if (newAssigneeId !== ticket?.AssignedTo) {
-        if (newAssigneeId !== null) {
-          promises.push(ticketService.assignTicket(ticketId, newAssigneeId));
+
+      // Update assignee if changed
+      const currentAssigned = ticket?.AssignedTo || 0;
+      const targetAssigned = newAssigneeId || 0;
+
+      if (targetAssigned !== currentAssigned) {
+        if (targetAssigned > 0) {
+          try {
+            await ticketService.assignTicket(ticketId, targetAssigned);
+          } catch (assignErr) {
+            // Fallback to updateTicket
+            await ticketService.updateTicket(ticketId, { AssignedTo: targetAssigned } as any);
+          }
         } else {
-          promises.push(ticketService.updateTicket(ticketId, { AssignedTo: null } as any));
+          // Unassigned
+          await ticketService.updateTicket(ticketId, { AssignedTo: 0 } as any);
         }
+        changed = true;
       }
-      if (promises.length > 0) {
-        await Promise.all(promises);
-        Alert.alert('Success', 'Task updated successfully.');
+
+      if (changed) {
+        showAlert({ title: 'Success', message: 'Task updated successfully.', type: 'success', cancelText: null });
         await loadData();
       }
       setModalVisible(false);
-    } catch (err) {
-      Alert.alert('Error', 'Failed to update task.');
+    } catch (err: any) {
+      showAlert({ title: 'Error', message: err?.message || 'Failed to update task.', type: 'error', cancelText: null });
     } finally {
       setUpdating(false);
     }
   };
 
-  const handleDeleteTicket = () => {
-    Alert.alert('Confirm Deletion', 'Are you sure you want to delete this task?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: async () => {
-        try {
-          await ticketService.deleteTicket(ticketId);
-          Alert.alert('Deleted', 'Task deleted successfully.');
-          navigation.goBack();
-        } catch (err) {
-          Alert.alert('Error', 'Failed to delete task.');
-        }
-      }}
-    ]);
+  const handleDeleteTicket = async () => {
+    try {
+      setDeleteModalVisible(false);
+      setTimeout(async () => {
+        await ticketService.deleteTicket(ticketId);
+        navigation.goBack();
+      }, 350);
+    } catch(e) {}
   };
 
-  const handleDeleteAttachment = (attachmentId: number) => {
-    Alert.alert('Confirm Deletion', 'Remove this attachment?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: async () => {
-        try {
-          await ticketService.deleteAttachment(ticketId, attachmentId);
-          loadData();
-        } catch (err) {
-          Alert.alert('Error', 'Failed to delete attachment.');
+  const [downloading, setDownloading] = useState<string | null>(null);
+
+  const handleViewAttachment = async (fileName: string) => {
+    try {
+      setDownloading(fileName);
+      const url = `${process.env.EXPO_PUBLIC_API_URL || 'https://20.6.104.150.sslip.io/api'}/tickets/${ticketId}/attachments/file/${encodeURIComponent(fileName)}`;
+      const token = await SecureStore.getItemAsync('auth_token');
+      
+      const fileUri = FileSystem.documentDirectory + fileName;
+      const downloadRes = await FileSystem.downloadAsync(url, fileUri, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (downloadRes.status === 200) {
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(downloadRes.uri);
+        } else {
+          showAlert({ title: 'Error', message: 'Sharing not available on this device.', type: 'error', cancelText: null });
         }
-      }}
-    ]);
+      } else {
+        showAlert({ title: 'Error', message: 'Failed to download attachment.', type: 'error', cancelText: null });
+      }
+    } catch (error) {
+      showAlert({ title: 'Error', message: 'Something went wrong while opening the file.', type: 'error', cancelText: null });
+    } finally {
+      setDownloading(null);
+    }
   };
 
-  if (loading) return <LoadingScreen message="Decrypting Task Details..." />;
+  const handleDeleteAttachment = async () => {
+    if (!attToDelete) return;
+    try {
+      await ticketService.deleteAttachment(ticketId, attToDelete);
+      setAttToDelete(null);
+      loadData();
+    } catch(e) {}
+  };
+
+  if (loading) return <LoadingScreen message="Loading Task Details..." />;
   if (error || !ticket) return (
     <View style={styles.centerContainer}>
       <Text style={styles.errorText}>{error || 'Task Not Found'}</Text>
@@ -202,12 +251,16 @@ export default function TicketDetailsScreen() {
             </TouchableOpacity>
           </View>
           
-          {ticket.Attachments && ticket.Attachments.length > 0 ? (
-            ticket.Attachments.map((att: any, idx: number) => (
-              <View key={idx} style={styles.attachmentRow}>
+          {attachments.length > 0 ? (
+            attachments.map((att: any) => (
+              <View key={att.AttachmentID || att.FileName} style={styles.attachmentRow}>
                 <Feather name="file" size={16} color={theme.colors.textSecondary} />
-                <Text style={styles.attachmentName} numberOfLines={1}>{att.FileName || 'Attachment'}</Text>
-                <TouchableOpacity onPress={() => handleDeleteAttachment(att.AttachmentID)} style={styles.deleteAttBtn}>
+                <TouchableOpacity onPress={() => handleViewAttachment(att.FileName)} style={{flex: 1, marginLeft: 8}}>
+                    <Text style={[styles.attachmentName, { color: theme.colors.primary, textDecorationLine: 'underline' }]} numberOfLines={1}>
+                      {downloading === att.FileName ? 'Downloading...' : (att.FileName || 'Attachment')}
+                    </Text>
+                  </TouchableOpacity>
+                <TouchableOpacity onPress={() => setAttToDelete(att.AttachmentID)} style={styles.deleteAttBtn}>
                   <Feather name="trash-2" size={16} color={theme.colors.error} />
                 </TouchableOpacity>
               </View>
@@ -220,7 +273,23 @@ export default function TicketDetailsScreen() {
         </View>
 
         <View style={{ height: 40 }} />
-        <AppButton title="DELETE TASK" variant="danger" onPress={handleDeleteTicket} />
+        <AppButton title="DELETE TASK" variant="danger" onPress={() => setDeleteModalVisible(true)} />
+
+      <ConfirmModal
+        visible={deleteModalVisible}
+        title="Delete Task?"
+        message="This will permanently delete this task and all its attachments."
+        onConfirm={handleDeleteTicket}
+        onCancel={() => setDeleteModalVisible(false)}
+      />
+
+      <ConfirmModal
+        visible={!!attToDelete}
+        title="Delete Attachment?"
+        message="This file will be permanently removed."
+        onConfirm={handleDeleteAttachment}
+        onCancel={() => setAttToDelete(null)}
+      />
       </ScrollView>
 
       <UpdateTicketModal 

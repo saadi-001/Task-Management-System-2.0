@@ -7,28 +7,18 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
-// ==============================
-// User
-// ==============================
-
 model user {
-  UserID          Int      @id @default(autoincrement())
-  Name            String
-  Email           String   @unique(map: "User_Email_key")
-  Password        String
-  DateOfBirth     DateTime?
-  ResetToken      String?
+  UserID           Int       @id @default(autoincrement())
+  Name             String
+  Email            String    @unique(map: "User_Email_key")
+  Password         String
+  DateOfBirth      DateTime?
+  ResetToken       String?
   ResetTokenExpiry DateTime?
-  IsActive        Boolean  @default(true)
+  IsActive         Boolean   @default(true)
 
   @@map("user")
 }
-
-
-// ==============================
-// Organization
-// ==============================
 
 model organization {
   OrganizationID Int     @id @default(autoincrement())
@@ -40,14 +30,8 @@ model organization {
   OwnerID        Int?
 
   @@index([OwnerID], map: "Organization_OwnerID_fkey")
-
   @@map("organization")
 }
-
-
-// ==============================
-// Organization Members
-// ==============================
 
 model organizationmembers {
   OrganizationMemberID Int    @id @default(autoincrement())
@@ -57,14 +41,8 @@ model organizationmembers {
 
   @@index([OrganizationID], map: "OrganizationMembers_OrganizationID_fkey")
   @@index([UserID], map: "OrganizationMembers_UserID_fkey")
-
   @@map("organizationmembers")
 }
-
-
-// ==============================
-// Project
-// ==============================
 
 model project {
   ProjectID      Int     @id @default(autoincrement())
@@ -75,14 +53,8 @@ model project {
 
   @@index([OrganizationID], map: "Project_OrganizationID_fkey")
   @@index([OwnerID], map: "Project_OwnerID_fkey")
-
   @@map("project")
 }
-
-
-// ==============================
-// Project Members
-// ==============================
 
 model projectmembers {
   ProjectMemberID Int    @id @default(autoincrement())
@@ -92,14 +64,8 @@ model projectmembers {
 
   @@index([ProjectID], map: "ProjectMembers_ProjectID_fkey")
   @@index([UserID], map: "ProjectMembers_UserID_fkey")
-
   @@map("projectmembers")
 }
-
-
-// ==============================
-// Task
-// ==============================
 
 model task {
   TaskID      Int     @id @default(autoincrement())
@@ -112,14 +78,8 @@ model task {
 
   @@index([AssignedTo], map: "Task_AssignedTo_fkey")
   @@index([ProjectID], map: "Task_ProjectID_fkey")
-
   @@map("task")
 }
-
-
-// ==============================
-// Comment
-// ==============================
 
 model comment {
   CommentID Int    @id @default(autoincrement())
@@ -129,14 +89,8 @@ model comment {
 
   @@index([TaskID], map: "Comment_TaskID_fkey")
   @@index([UserID], map: "Comment_UserID_fkey")
-
   @@map("comment")
 }
-
-
-// ==============================
-// Attachment
-// ==============================
 
 model attachment {
   AttachmentID Int    @id @default(autoincrement())
@@ -145,14 +99,8 @@ model attachment {
   TaskID       Int
 
   @@index([TaskID], map: "Attachment_TaskID_fkey")
-
   @@map("attachment")
 }
-
-
-// ==============================
-// Activity History
-// ==============================
 
 model activityhistory {
   ActivityID Int    @id @default(autoincrement())
@@ -162,34 +110,18 @@ model activityhistory {
 
   @@index([TaskID], map: "ActivityHistory_TaskID_fkey")
   @@index([UserID], map: "ActivityHistory_UserID_fkey")
-
   @@map("activityhistory")
 }
-
-
-// ==============================
-// Permission
-// ==============================
 
 model permission {
   PermissionID Int    @id @default(autoincrement())
   Name         String @unique(map: "Permission_Name_key")
 }
 
-
-// ==============================
-// Role
-// ==============================
-
 model role {
   RoleID Int    @id @default(autoincrement())
   Name   String @unique(map: "Role_Name_key")
 }
-
-
-// ==============================
-// Role Permission
-// ==============================
 
 model rolepermission {
   RolePermissionID Int @id @default(autoincrement())
@@ -200,11 +132,6 @@ model rolepermission {
   @@index([PermissionID], map: "RolePermission_PermissionID_fkey")
 }
 
-
-// ==============================
-// User Role
-// ==============================
-
 model userrole {
   UserRoleID Int @id @default(autoincrement())
   UserID     Int
@@ -214,15 +141,11 @@ model userrole {
   @@index([RoleID], map: "UserRole_RoleID_fkey")
 }
 
-// ==============================
-// Notification System
-// ==============================
-
 model devicetoken {
   DeviceTokenID Int      @id @default(autoincrement())
   UserID        Int
   Token         String   @unique(map: "DeviceToken_Token_key")
-  Platform      String?  
+  Platform      String?
   DeviceId      String?
   IsActive      Boolean  @default(true)
   CreatedAt     DateTime @default(now())
@@ -233,13 +156,13 @@ model devicetoken {
 }
 
 model notificationpreference {
-  PreferenceID Int      @id @default(autoincrement())
-  UserID       Int      @unique(map: "NotificationPreference_UserID_key")
-  PushEnabled  Boolean  @default(true)
-  EmailEnabled Boolean  @default(false)
-  TicketEvents String?  @db.Text
+  PreferenceID  Int     @id @default(autoincrement())
+  UserID        Int     @unique(map: "NotificationPreference_UserID_key")
+  PushEnabled   Boolean @default(true)
+  EmailEnabled  Boolean @default(false)
+  TicketEvents  String? @db.Text
   ProjectEvents String? @db.Text
-  SystemEvents String?  @db.Text
+  SystemEvents  String? @db.Text
 
   @@map("notificationpreference")
 }
@@ -247,10 +170,10 @@ model notificationpreference {
 model notification {
   NotificationID Int      @id @default(autoincrement())
   UserID         Int
-  Type           String   
+  Type           String
   Title          String
   Body           String
-  EntityType     String?  
+  EntityType     String?
   EntityID       Int?
   IsRead         Boolean  @default(false)
   CreatedAt      DateTime @default(now())

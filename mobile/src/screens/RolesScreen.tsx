@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, TextInput, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
@@ -29,7 +29,7 @@ export default function RolesScreen() {
       setFilteredRoles(roles);
     } else {
       const lowerQuery = searchQuery.toLowerCase();
-      setFilteredRoles(roles.filter(r => r.RoleName.toLowerCase().includes(lowerQuery)));
+      setFilteredRoles(roles.filter(r => r.Name.toLowerCase().includes(lowerQuery)));
     }
   }, [searchQuery, roles]);
 
@@ -43,7 +43,7 @@ export default function RolesScreen() {
       setRoles(res.data || []);
     } catch (err: any) {
       if (err.response?.status === 403) {
-        setError('Unauthorized: Administrator clearance required.');
+        setError('Unauthorized: Administrator access required.');
       } else {
         setError('Failed to fetch roles.');
       }
@@ -56,21 +56,21 @@ export default function RolesScreen() {
   const renderRole = ({ item }: { item: Role }) => (
     <TouchableOpacity 
       style={styles.card}
-      onPress={() => {}}
+      onPress={() => navigation.navigate("RoleDetails", { roleId: item.RoleID })}
       activeOpacity={0.7}
     >
       <View style={styles.iconContainer}>
         <Feather name="shield" size={20} color={theme.colors.primary} />
       </View>
       <View style={styles.info}>
-        <Text style={styles.roleName}>{item.RoleName}</Text>
+        <Text style={styles.roleName}>{item.Name}</Text>
         <Text style={styles.roleId}>ROLE-ID: {item.RoleID}</Text>
       </View>
       <Feather name="chevron-right" size={20} color={theme.colors.textMuted} />
     </TouchableOpacity>
   );
 
-  if (loading) return <LoadingScreen message="Verifying Clearance..." />;
+  if (loading) return <LoadingScreen message="Verifying Permissions..." />;
 
   return (
     <View style={styles.container}>

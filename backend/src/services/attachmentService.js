@@ -1,4 +1,6 @@
 const attachmentRepository = require("../repositories/attachmentRepository");
+const ticketRepository = require("../repositories/ticketRepository");
+const notificationService = require("./notificationService");
 const {
     uploadFile,
     getFile,
@@ -8,7 +10,7 @@ const {
 // ==============================
 // Create Attachment
 // ==============================
-const createAttachment = async (file, ticketId) => {
+const createAttachment = async (file, ticketId, uploaderId) => {
     if (!file) {
         const error = new Error("No file uploaded");
         error.statusCode = 400;
@@ -28,6 +30,13 @@ const createAttachment = async (file, ticketId) => {
         throw error;
     }
 
+    const ticket = await ticketRepository.findTicketById(parsedTicketId);
+    if (!ticket) {
+        const error = new Error("Ticket not found");
+        error.statusCode = 404;
+        throw error;
+    }
+
     const fileName =
         Date.now() +
         "-" +
@@ -44,11 +53,14 @@ const createAttachment = async (file, ticketId) => {
     );
 
     // Save attachment information in MySQL
-    return await attachmentRepository.createAttachment({
+    const attachment = await attachmentRepository.createAttachment({
         FileName: fileName,
         FileUrl: fileName,
         TaskID: parsedTicketId,
     });
+
+    await notificationService.attachmentAdded(ticket, attachment, uploaderId);
+    return attachment;
 };
 
 

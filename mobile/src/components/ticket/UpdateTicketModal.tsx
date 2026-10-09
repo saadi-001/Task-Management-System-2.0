@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, Animated, Dimensions, Platform } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useThemeContext } from '../../context/ThemeContext';
@@ -28,6 +28,13 @@ export default function UpdateTicketModal({ visible, onClose, onSave, currentSta
   
   const [selectedStatus, setSelectedStatus] = useState(currentStatus || 'Open');
   const [selectedAssignee, setSelectedAssignee] = useState<number | null>(currentAssignee);
+
+  useEffect(() => {
+    if (visible) {
+      setSelectedStatus(currentStatus || 'Open');
+      setSelectedAssignee(currentAssignee);
+    }
+  }, [visible, currentStatus, currentAssignee]);
 
   const handleSave = () => {
     onSave(selectedStatus, selectedAssignee);

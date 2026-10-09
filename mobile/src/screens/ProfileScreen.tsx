@@ -1,22 +1,31 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Animated, Platform } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { Feather } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+﻿import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, Animated, TouchableOpacity, Platform } from 'react-native';
+import ConfirmModal from '../components/common/ConfirmModal';
 import { useAuth } from '../context/AuthContext';
 import { useThemeContext, ThemeOption } from '../context/ThemeContext';
 import { AppTheme } from '../constants/theme';
-import AppButton from '../components/common/AppButton';
+import { Feather } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
-export default function ProfileScreen() {
-  const { user, logout, permissions, roles } = useAuth();
-  const navigation = useNavigation<any>();
+export default function ProfileScreen({ navigation }: any) {
+  const { user, roles, permissions, logout } = useAuth();
   const { theme, themeOption, setThemeOption } = useThemeContext();
   const styles = getStyles(theme);
-  const fadeAnim = React.useRef(new Animated.Value(0)).current;
 
-  React.useEffect(() => {
-    Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }).start();
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  const handleLogout = () => {
+    setLogoutModalVisible(true);
+  };
+  const [showPermissions, setShowPermissions] = useState(false);
+  const [logoutModalVisible, setLogoutModalVisible] = useState(false);
+
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 600,
+      useNativeDriver: true,
+    }).start();
   }, []);
 
   const getInitials = (name: string) => name ? name.charAt(0).toUpperCase() : 'U';
@@ -45,10 +54,14 @@ export default function ProfileScreen() {
         
         <Animated.View style={[styles.headerCard, { opacity: fadeAnim }]}>
           <LinearGradient colors={[theme.colors.surfaceHighlight, 'transparent']} style={StyleSheet.absoluteFill} />
-          <View style={styles.avatarGlow} />
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{getInitials(user?.Name || '')}</Text>
+          
+          {/* Stable Professional Avatar Ring */}
+          <View style={styles.avatarOuterRing}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{getInitials(user?.Name || '')}</Text>
+            </View>
           </View>
+
           <Text style={styles.name}>{user?.Name}</Text>
           <Text style={styles.email}>{user?.Email}</Text>
           <View style={styles.roleBadge}>
@@ -56,17 +69,38 @@ export default function ProfileScreen() {
           </View>
         </Animated.View>
 
+        {/* Collapsible Permissions Folder */}
         <Animated.View style={[styles.section, { opacity: fadeAnim }]}>
-          <Text style={styles.sectionTitle}>EFFECTIVE PERMISSIONS</Text>
-          <View style={styles.permissionsContainer}>
-            {permissions && permissions.length > 0 ? (
-              permissions.map((perm, index) => (
-                <View key={index} style={styles.permBadge}>
-                  <Text style={styles.permText}>{perm}</Text>
+          <Text style={styles.sectionTitle}>AUTHORIZATION</Text>
+          <View style={styles.card}>
+            <TouchableOpacity 
+              style={styles.menuItem} 
+              onPress={() => setShowPermissions(!showPermissions)}
+              activeOpacity={0.7}
+            >
+              <Feather name={showPermissions ? "folder-minus" : "folder"} size={20} color={theme.colors.primary} style={styles.menuIcon} />
+              <Text style={styles.menuText}>View Effective Permissions</Text>
+              <View style={styles.badgeCount}>
+                <Text style={styles.badgeCountText}>{permissions?.length || 0}</Text>
+              </View>
+              <Feather name={showPermissions ? "chevron-up" : "chevron-down"} size={20} color={theme.colors.textMuted} />
+            </TouchableOpacity>
+
+            {showPermissions && (
+              <>
+                <View style={styles.divider} />
+                <View style={styles.permissionsContainer}>
+                  {permissions && permissions.length > 0 ? (
+                    permissions.map((perm, index) => (
+                      <View key={index} style={styles.permBadge}>
+                        <Text style={styles.permText}>{perm}</Text>
+                      </View>
+                    ))
+                  ) : (
+                    <Text style={styles.helpText}>No specific permissions granted.</Text>
+                  )}
                 </View>
-              ))
-            ) : (
-              <Text style={styles.helpText}>No specific permissions granted.</Text>
+              </>
             )}
           </View>
         </Animated.View>
@@ -110,15 +144,15 @@ export default function ProfileScreen() {
         <Animated.View style={[styles.section, { opacity: fadeAnim }]}>
           <Text style={styles.sectionTitle}>ACCOUNT</Text>
           <View style={styles.card}>
-            <TouchableOpacity style={styles.menuItem}>
+            <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate("EditProfile")}>
               <Feather name="user" size={20} color={theme.colors.textSecondary} style={styles.menuIcon} />
               <Text style={styles.menuText}>Edit Profile</Text>
               <Feather name="chevron-right" size={20} color={theme.colors.textMuted} />
             </TouchableOpacity>
             <View style={styles.divider} />
-            <TouchableOpacity style={styles.menuItem} onPress={logout}>
+            <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
               <Feather name="log-out" size={20} color={theme.colors.error} style={styles.menuIcon} />
-              <Text style={[styles.menuText, { color: theme.colors.error }]}>Disconnect Identity</Text>
+              <Text style={[styles.menuText, { color: theme.colors.error }]}>Logout</Text>
             </TouchableOpacity>
           </View>
         </Animated.View>
@@ -129,6 +163,19 @@ export default function ProfileScreen() {
         </View>
         
       </ScrollView>
+      <ConfirmModal
+        visible={logoutModalVisible}
+        title="Logout"
+        message="Are you sure you want to securely disconnect your session and logout of the neural core?"
+        confirmText="Logout"
+        iconName="power"
+        variant="danger"
+        onCancel={() => setLogoutModalVisible(false)}
+        onConfirm={() => {
+          setLogoutModalVisible(false);
+            setTimeout(() => logout(), 300);
+        }}
+      />
     </View>
   );
 }
@@ -146,13 +193,34 @@ const getStyles = (theme: AppTheme) => StyleSheet.create({
     borderWidth: 1, borderColor: theme.colors.border,
     ...theme.shadows.glass,
     overflow: 'hidden',
+    position: 'relative',
   },
-  avatarGlow: { position: 'absolute', top: 30, width: 100, height: 100, borderRadius: 50, backgroundColor: theme.colors.primaryGlow, transform: [{ scale: 1.5 }] },
-  avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: theme.colors.primary, justifyContent: 'center', alignItems: 'center', marginBottom: 16, borderWidth: 2, borderColor: theme.colors.glassBorder, ...theme.shadows.neon },
+
+  avatarOuterRing: {
+    width: 104, 
+    height: 104, 
+    borderRadius: 52, 
+    backgroundColor: theme.colors.primaryGlow,
+    justifyContent: 'center', 
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  avatar: { 
+    width: 80, 
+    height: 80, 
+    borderRadius: 40, 
+    backgroundColor: theme.colors.primary, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    borderWidth: 3, 
+    borderColor: theme.colors.surface,
+    ...theme.shadows.medium,
+  },
+  
   avatarText: { fontSize: 32, fontWeight: '700', color: '#ffffff' },
-  name: { ...theme.typography.h1, fontSize: 24, color: theme.colors.textPrimary, marginBottom: 4 },
-  email: { ...theme.typography.body, color: theme.colors.textSecondary, marginBottom: 16 },
-  roleBadge: { paddingHorizontal: 16, paddingVertical: 6, backgroundColor: theme.colors.iconBg, borderRadius: 20 },
+  name: { ...theme.typography.h1, fontSize: 24, color: theme.colors.textPrimary, marginBottom: 4, zIndex: 2 },
+  email: { ...theme.typography.body, color: theme.colors.textSecondary, marginBottom: 16, zIndex: 2 },
+  roleBadge: { paddingHorizontal: 16, paddingVertical: 6, backgroundColor: theme.colors.iconBg, borderRadius: 20, zIndex: 2 },
   roleText: { ...theme.typography.caption, color: theme.colors.textPrimary, fontWeight: '600', letterSpacing: 1, textTransform: 'uppercase' },
   
   section: { marginBottom: 24 },
@@ -164,18 +232,24 @@ const getStyles = (theme: AppTheme) => StyleSheet.create({
   menuIcon: { marginRight: 16 },
   menuText: { flex: 1, ...theme.typography.body, color: theme.colors.textPrimary, fontWeight: '500' },
   
+  badgeCount: { backgroundColor: theme.colors.primaryGlow, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 12, marginRight: 12 },
+  badgeCountText: { fontSize: 12, fontWeight: '700', color: theme.colors.primary },
+
   themeOption: { flexDirection: 'row', alignItems: 'center', padding: theme.spacing.lg },
   themeOptionSelected: { backgroundColor: theme.colors.primaryGlow },
   themeOptionText: { flex: 1, marginLeft: 16, ...theme.typography.body, color: theme.colors.textPrimary, fontWeight: '500' },
   themeOptionTextSelected: { color: theme.colors.primary },
   themeOptionDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: theme.colors.primary },
   
-  permissionsContainer: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 8 },
-  permBadge: { backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.primary, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, marginRight: 8, marginBottom: 8 },
-  permText: { ...theme.typography.caption, color: theme.colors.primary, fontWeight: '600' },
+  permissionsContainer: { flexDirection: 'row', flexWrap: 'wrap', padding: theme.spacing.md, backgroundColor: theme.colors.iconBg },
+  permBadge: { backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.borderHighlight, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, marginRight: 8, marginBottom: 8 },
+  permText: { fontSize: 11, color: theme.colors.textPrimary, fontWeight: '600' },
   helpText: { ...theme.typography.body, color: theme.colors.textSecondary, marginLeft: 8 },
 
   footer: { alignItems: 'center', marginTop: 20, marginBottom: 40 },
   footerText: { ...theme.typography.caption, color: theme.colors.textSecondary, fontWeight: '700', letterSpacing: 2, marginBottom: 4 },
   versionText: { ...theme.typography.caption, color: theme.colors.textMuted },
 });
+
+
+

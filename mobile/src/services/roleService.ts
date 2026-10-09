@@ -1,8 +1,8 @@
-import { fetchApi } from './api';
+﻿import { fetchApi } from './api';
 
 export interface Role {
   RoleID: number;
-  RoleName: string;
+  Name: string;
 }
 
 export const roleService = {
@@ -14,7 +14,7 @@ export const roleService = {
     return await fetchApi(`/roles/${id}`, { method: 'GET' });
   },
 
-  async createRole(data: { roleName: string }): Promise<{ success: boolean; data: Role }> {
+  async createRole(data: { name: string }): Promise<{ success: boolean; data: Role }> {
     return await fetchApi('/roles', {
       method: 'POST',
       body: JSON.stringify(data),

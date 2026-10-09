@@ -1,4 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { useAlert } from '../context/AlertContext';
+import { useAuth } from '../context/AuthContext';
 import { View, Text, StyleSheet, ScrollView, Alert, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useThemeContext } from '../context/ThemeContext';
@@ -7,13 +9,16 @@ import { ticketService } from '../services/ticketService';
 import { projectService, Project } from '../services/projectService';
 import AppInput from '../components/common/AppInput';
 import AppButton from '../components/common/AppButton';
+import ConfirmModal from '../components/common/ConfirmModal';
 
 type ParamList = { CreateTicket: { projectId?: number; }; };
 
 export default function CreateTicketScreen() {
   const { theme } = useThemeContext();
   const styles = getStyles(theme);
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
+  const { showAlert } = useAlert();
+  const { user } = useAuth();
   const route = useRoute<RouteProp<ParamList, 'CreateTicket'>>();
   
   const initialProjectId = route.params?.projectId;
@@ -23,6 +28,8 @@ export default function CreateTicketScreen() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(initialProjectId || null);
   const [loading, setLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [messageModal, setMessageModal] = useState({ visible: false, title: '', message: '', type: 'error' as 'error'|'success' });
   const [fetchingProjects, setFetchingProjects] = useState(!initialProjectId);
 
   useEffect(() => {
@@ -48,33 +55,43 @@ export default function CreateTicketScreen() {
   };
 
   const handleCreate = async () => {
-    if (!title.trim() || !selectedProjectId) {
-      Alert.alert('Validation Error', 'Title and Project Context are required.');
+    if (!title.trim()) {
+      showAlert({ title: 'Validation Error', message: 'Task title is required.', type: 'error' , cancelText: null });
+      return;
+    }
+    if (!selectedProjectId) {
+      showAlert({ title: 'Validation Error', message: 'Please select a project.', type: 'error' , cancelText: null });
       return;
     }
 
     try {
       setLoading(true);
-      const ticketData = { 
-        Title: title, 
-        Description: description, 
-        ProjectID: selectedProjectId, 
-        Status: 'Open', 
-        Priority: 'Medium' 
-      };
+      await ticketService.createTicket({
+        Title: title.trim(),
+        Description: description.trim() || undefined,
+        ProjectID: selectedProjectId,
+          AssignedTo: user?.UserID || user?.id || 1,
+        Status: 'Open',
+        Priority: 'Medium',
+        
+      });
       
-      const res = await ticketService.createTicket(ticketData);
-      
-      if (res && res.success) {
-        Alert.alert('Success', 'Task sequence initialized successfully.', [
-          { text: 'PROCEED', onPress: () => navigation.goBack() }
-        ]);
-      }
+      setIsSuccess(true);
+      showAlert({
+        title: 'Success',
+        message: 'Created successfully.',
+        type: 'success',
+        cancelText: null,
+        onConfirm: () => navigation.goBack()
+      });
     } catch (error: any) {
-      const msg = error.response?.data?.message || 'Failed to initialize task.';
-      Alert.alert('Upload Failed', msg);
-    } finally {
       setLoading(false);
+      showAlert({
+        title: 'Error',
+        message: error.response?.data?.message || 'Operation failed.',
+        type: 'error',
+        cancelText: null
+      });
     }
   };
 
@@ -82,12 +99,12 @@ export default function CreateTicketScreen() {
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
-          <Text style={styles.title}>Initialize Task</Text>
-          <Text style={styles.subtitle}>Queue a new objective in the system pipeline.</Text>
+          <Text style={styles.title}>Create Task</Text>
+          <Text style={styles.subtitle}>Create a new task for your project.</Text>
         </View>
 
         <AppInput label="Task Title" placeholder="e.g. Update Neural Net Weights" value={title} onChangeText={setTitle}  />
-        <AppInput label="Description (Optional)" placeholder="Detailed task directives..." value={description} onChangeText={setDescription}  multiline />
+        <AppInput label="Description (Optional)" placeholder="Detailed task description..." value={description} onChangeText={setDescription}  multiline />
 
         {!initialProjectId && (
           <View style={styles.selectorContainer}>
@@ -116,7 +133,7 @@ export default function CreateTicketScreen() {
         )}
 
         <View style={{ height: 40 }} />
-        <AppButton title="EXECUTE DEPLOYMENT" onPress={handleCreate} loading={loading} disabled={!title.trim() || !selectedProjectId} />
+        <AppButton title="EXECUTE DEPLOYMENT" onPress={handleCreate} loading={loading} disabled={!title.trim() || !selectedProjectId || loading || isSuccess} />
       </ScrollView>
     </KeyboardAvoidingView>
   );

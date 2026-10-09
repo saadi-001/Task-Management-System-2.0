@@ -1,27 +1,34 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert, KeyboardAvoidingView, Platform } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { useThemeContext } from '../context/ThemeContext';
 import { AppTheme } from '../constants/theme';
 import { projectService } from '../services/projectService';
 import { organizationService, Organization } from '../services/organizationService';
 import { useAuth } from '../context/AuthContext';
+import { useAlert } from '../context/AlertContext';
 import AppInput from '../components/common/AppInput';
 import AppButton from '../components/common/AppButton';
+import ConfirmModal from '../components/common/ConfirmModal';
 
 export default function CreateProjectScreen() {
   const { theme } = useThemeContext();
   const styles = getStyles(theme);
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
+  const { showAlert } = useAlert();
+  const route = useRoute<any>();
+  const initialOrgId = route.params?.initialOrgId;
   const { user } = useAuth();
   
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [orgs, setOrgs] = useState<Organization[]>([]);
-  const [selectedOrgId, setSelectedOrgId] = useState<number | null>(null);
+  const [selectedOrgId, setSelectedOrgId] = useState<number | null>(initialOrgId || null);
   
   const [loading, setLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const [fetchingOrgs, setFetchingOrgs] = useState(true);
+  const [messageModal, setMessageModal] = useState({ visible: false, title: '', message: '', type: 'error' as 'error'|'success' });
 
   useEffect(() => {
     loadOrgs();
@@ -33,7 +40,7 @@ export default function CreateProjectScreen() {
       if (res.data) {
         setOrgs(res.data);
         if (res.data.length > 0) {
-          setSelectedOrgId(res.data[0].OrganizationID);
+          if (!initialOrgId) setSelectedOrgId(res.data[0].OrganizationID);
         }
       }
     } catch (err) {
@@ -45,11 +52,11 @@ export default function CreateProjectScreen() {
 
   const handleCreate = async () => {
     if (!name.trim()) {
-      Alert.alert('Validation Error', 'Project name is required.');
+      showAlert({ title: 'Validation Error', message: 'Project name is required.', type: 'error' , cancelText: null });
       return;
     }
     if (!selectedOrgId) {
-      Alert.alert('Validation Error', 'Please select an organization.');
+      showAlert({ title: 'Validation Error', message: 'Please select an organization.', type: 'error' , cancelText: null });
       return;
     }
 
@@ -59,17 +66,25 @@ export default function CreateProjectScreen() {
         Name: name.trim(),
         Description: description.trim() || null,
         OrganizationID: selectedOrgId,
-        OwnerID: user?.UserID,
+        OwnerID: user?.UserID || user?.id || 1,
       });
       
-      Alert.alert('Success', 'Project created successfully.', [
-        { text: 'OK', onPress: () => navigation.goBack() }
-      ]);
+      setIsSuccess(true);
+      showAlert({
+        title: 'Success',
+        message: 'Created successfully.',
+        type: 'success',
+        cancelText: null,
+        onConfirm: () => navigation.goBack()
+      });
     } catch (error: any) {
-      const msg = error.response?.data?.message || 'Failed to create project.';
-      Alert.alert('Error', msg);
-    } finally {
       setLoading(false);
+      showAlert({
+        title: 'Error',
+        message: error.response?.data?.message || 'Operation failed.',
+        type: 'error',
+        cancelText: null
+      });
     }
   };
 
@@ -80,8 +95,8 @@ export default function CreateProjectScreen() {
     >
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
-          <Text style={styles.title}>Initialize Project</Text>
-          <Text style={styles.subtitle}>Create a new deployment sector in your workspace.</Text>
+          <Text style={styles.title}>Create Project</Text>
+          <Text style={styles.subtitle}>Create a new project in your workspace.</Text>
         </View>
 
         <AppInput
@@ -94,7 +109,7 @@ export default function CreateProjectScreen() {
 
         <AppInput
           label="Description (Optional)"
-          placeholder="Detailed project directives..."
+          placeholder="Detailed project description..."
           value={description}
           onChangeText={setDescription}
           
@@ -130,7 +145,7 @@ export default function CreateProjectScreen() {
           title="DEPLOY PROJECT" 
           onPress={handleCreate} 
           loading={loading}
-          disabled={!name.trim() || !selectedOrgId}
+          disabled={!name.trim() || !selectedOrgId || loading || isSuccess}
         />
       </ScrollView>
     </KeyboardAvoidingView>

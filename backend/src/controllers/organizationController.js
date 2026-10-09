@@ -1,4 +1,5 @@
 const organizationService = require("../services/organizationService");
+const notificationService = require("../services/notificationService");
 
 
 // ==============================
@@ -15,8 +16,7 @@ const createOrganization = async (req, res) => {
             ownerID
         } = req.body;
 
-        const organization =
-            await organizationService.createOrganization({
+        const organization = await organizationService.createOrganization({
                 name,
                 email,
                 contactNo,
@@ -24,6 +24,19 @@ const createOrganization = async (req, res) => {
                 theme,
                 ownerID
             });
+
+        try {
+            await notificationService.sendNotification({
+                userId: ownerID || (req.user && (req.user.UserID || req.user.userId || req.user.id)) || 1,
+                type: 'SYSTEM',
+                title: 'Organization Created',
+                body: `Your new organization "${name}" has been successfully set up.`,
+                entityType: 'ORGANIZATION',
+                entityId: organization.OrganizationID || organization.id
+            });
+        } catch (e) {
+            console.error("Failed to send push notification", e);
+        }
 
         res.status(201).json({
             success: true,

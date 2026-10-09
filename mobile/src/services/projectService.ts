@@ -15,6 +15,10 @@ export const projectService = {
     return await fetchApi('/projects', { method: 'GET' });
   },
 
+  async getProjectsByOrganization(orgId: number): Promise<{ success: boolean; data: Project[] }> {
+    return await fetchApi(`/projects/organization/${orgId}`, { method: 'GET' });
+  },
+
   async getProject(id: number): Promise<{ success: boolean; data: Project }> {
     return await fetchApi(`/projects/${id}`, { method: 'GET' });
   },
@@ -30,6 +34,20 @@ export const projectService = {
     return await fetchApi(`/projects/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
+    });
+  },
+
+  
+  async linkProject(id: number, orgId: number): Promise<{ success: boolean; data: Project }> {
+    return await fetchApi(`/projects/${id}/link`, {
+      method: 'PUT',
+      body: JSON.stringify({ OrganizationID: orgId }),
+    });
+  },
+
+  async unlinkProject(id: number): Promise<{ success: boolean; data: Project }> {
+    return await fetchApi(`/projects/${id}/unlink`, {
+      method: 'PUT',
     });
   },
 

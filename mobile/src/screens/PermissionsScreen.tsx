@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, TextInput, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
@@ -29,7 +29,7 @@ export default function PermissionsScreen() {
       setFilteredPermissions(permissions);
     } else {
       const lowerQuery = searchQuery.toLowerCase();
-      setFilteredPermissions(permissions.filter(p => p.PermissionName.toLowerCase().includes(lowerQuery)));
+      setFilteredPermissions(permissions.filter(p => p.Name.toLowerCase().includes(lowerQuery)));
     }
   }, [searchQuery, permissions]);
 
@@ -43,7 +43,7 @@ export default function PermissionsScreen() {
       setPermissions(res.data || []);
     } catch (err: any) {
       if (err.response?.status === 403) {
-        setError('Unauthorized: Administrator clearance required.');
+        setError('Unauthorized: Administrator access required.');
       } else {
         setError('Failed to fetch permissions.');
       }
@@ -59,13 +59,13 @@ export default function PermissionsScreen() {
         <Feather name="key" size={20} color={theme.colors.stats.purple.color} />
       </View>
       <View style={styles.info}>
-        <Text style={styles.permName}>{item.PermissionName}</Text>
+        <Text style={styles.permName}>{item.Name}</Text>
         <Text style={styles.permId}>PERM-ID: {item.PermissionID}</Text>
       </View>
     </View>
   );
 
-  if (loading) return <LoadingScreen message="Verifying Clearance..." />;
+  if (loading) return <LoadingScreen message="Verifying Permissions..." />;
 
   return (
     <View style={styles.container}>

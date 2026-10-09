@@ -54,7 +54,10 @@ class NotificationService {
           notificationId: notification.NotificationID,
           type: data.type, 
           entityType: data.entityType, 
-          entityId: data.entityId 
+          entityId: data.entityId,
+          ticketId: data.entityType === 'TICKET' ? data.entityId : undefined,
+          projectId: data.entityType === 'PROJECT' ? data.entityId : undefined,
+          organizationId: data.entityType === 'ORGANIZATION' ? data.entityId : undefined
         },
       });
     }
@@ -99,6 +102,63 @@ class NotificationService {
     });
   }
 
+  async ticketReassigned(ticket, previousAssigneeId, updaterId) {
+    if (ticket.AssignedTo && ticket.AssignedTo !== updaterId) {
+      await this.sendNotification({
+        userId: ticket.AssignedTo,
+        type: 'TICKET_REASSIGNED',
+        title: 'Task Reassigned',
+        body: `You were assigned "${ticket.Title}"`,
+        entityType: 'TICKET',
+        entityId: ticket.TaskID
+      });
+    }
+
+    if (previousAssigneeId && previousAssigneeId !== updaterId && previousAssigneeId !== ticket.AssignedTo) {
+      await this.sendNotification({
+        userId: previousAssigneeId,
+        type: 'TICKET_REASSIGNED',
+        title: 'Task Reassigned',
+        body: `"${ticket.Title}" was reassigned to another user`,
+        entityType: 'TICKET',
+        entityId: ticket.TaskID
+      });
+    }
+  }
+
+  async ticketPriorityChanged(ticket, updaterId) {
+    return this.notifyTicketAssignee(ticket, updaterId, 'TICKET_PRIORITY_CHANGED', 'Task Priority Updated', `"${ticket.Title}" priority is now ${ticket.Priority}`);
+  }
+
+  async ticketUpdated(ticket, updaterId) {
+    return this.notifyTicketAssignee(ticket, updaterId, 'TICKET_UPDATED', 'Task Updated', `"${ticket.Title}" was updated`);
+  }
+
+  async ticketCompleted(ticket, updaterId) {
+    return this.notifyTicketAssignee(ticket, updaterId, 'TICKET_COMPLETED', 'Task Completed', `"${ticket.Title}" was marked Done`);
+  }
+
+  async ticketReopened(ticket, updaterId) {
+    return this.notifyTicketAssignee(ticket, updaterId, 'TICKET_REOPENED', 'Task Reopened', `"${ticket.Title}" was reopened`);
+  }
+
+  async attachmentAdded(ticket, attachment, uploaderId) {
+    return this.notifyTicketAssignee(ticket, uploaderId, 'ATTACHMENT_ADDED', 'New Attachment Added', `A file was added to "${ticket.Title}"`);
+  }
+
+  async notifyTicketAssignee(ticket, updaterId, type, title, body) {
+    if (!ticket.AssignedTo || Number(ticket.AssignedTo) === Number(updaterId)) return;
+
+    return this.sendNotification({
+      userId: ticket.AssignedTo,
+      type,
+      title,
+      body,
+      entityType: 'TICKET',
+      entityId: ticket.TaskID
+    });
+  }
+
   async userAddedToOrganization(organization, userId, role) {
     await this.sendNotification({
       userId,
@@ -116,6 +176,54 @@ class NotificationService {
       type: 'ORGANIZATION_REMOVED',
       title: 'Removed from Organization',
       body: `You were removed from "${organization.Name}"`,
+      entityType: 'ORGANIZATION',
+      entityId: organization.OrganizationID
+    });
+  }
+
+  async roleChanged(userId, roleName, wasAssigned) {
+    await this.sendNotification({
+      userId,
+      type: 'USER_ROLE_CHANGED',
+      title: 'Role Changed',
+      body: wasAssigned
+        ? `You were assigned the ${roleName} role`
+        : `The ${roleName} role was removed from your account`,
+      entityType: 'USER',
+      entityId: userId
+    });
+  }
+
+  async permissionsChanged(userId, roleName) {
+    await this.sendNotification({
+      userId,
+      type: 'PERMISSIONS_CHANGED',
+      title: 'Permissions Changed',
+      body: `Permissions for your ${roleName} role were updated`,
+      entityType: 'USER',
+      entityId: userId
+    });
+  }
+
+  async projectUpdated(project, updaterId) {
+    if (!project.OwnerID || Number(project.OwnerID) === Number(updaterId)) return;
+    await this.sendNotification({
+      userId: project.OwnerID,
+      type: 'PROJECT_UPDATED',
+      title: 'Project Updated',
+      body: `"${project.Name}" was updated`,
+      entityType: 'PROJECT',
+      entityId: project.ProjectID
+    });
+  }
+
+  async organizationUpdated(organization, updaterId) {
+    if (!organization.OwnerID || Number(organization.OwnerID) === Number(updaterId)) return;
+    await this.sendNotification({
+      userId: organization.OwnerID,
+      type: 'ORGANIZATION_UPDATED',
+      title: 'Organization Updated',
+      body: `"${organization.Name}" was updated`,
       entityType: 'ORGANIZATION',
       entityId: organization.OrganizationID
     });

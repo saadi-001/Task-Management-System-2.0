@@ -12,6 +12,11 @@ const userViewMiddleware = async (req, res, next) => {
             });
         }
 
+        // Always allow a user to view or edit their own profile, regardless of roles.
+        if (loggedInUserId === requestedUserId) {
+            return next();
+        }
+
         const userRoles = await prisma.userrole.findMany({
             where: {
                 UserID: loggedInUserId,
@@ -38,21 +43,17 @@ const userViewMiddleware = async (req, res, next) => {
         });
 
         const isAdmin = roles.some(
-            (role) => role.Name === "Admin"
+            (role) => ["Admin", "Administrator", "Owner"].includes(role.Name)
         );
 
         if (isAdmin) {
             return next();
         }
 
-        if (loggedInUserId !== requestedUserId) {
-            return res.status(403).json({
-                success: false,
-                message: "You can only view your own profile.",
-            });
-        }
-
-        return next();
+        return res.status(403).json({
+            success: false,
+            message: "You can only view your own profile.",
+        });
     } catch (error) {
         console.error("User view authorization error:", error);
 

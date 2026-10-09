@@ -1,8 +1,7 @@
-import React from 'react';
+﻿import React from 'react';
 import { View, StyleSheet, Platform, TouchableOpacity } from 'react-native';
 import { createBottomTabNavigator, BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Feather } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
 import DashboardScreen from '../screens/DashboardScreen';
 import ProjectsScreen from '../screens/ProjectsScreen';
 import TicketsScreen from '../screens/TicketsScreen';
@@ -15,7 +14,6 @@ const Tab = createBottomTabNavigator();
 function CustomTabBar({ state, descriptors, navigation, theme, styles }: BottomTabBarProps & { theme: AppTheme, styles: any }) {
   return (
     <View style={styles.tabBarContainer}>
-      
       <View style={styles.tabBarContent}>
         {state.routes.map((route, index) => {
           const { options } = descriptors[route.key];
@@ -44,7 +42,6 @@ function CustomTabBar({ state, descriptors, navigation, theme, styles }: BottomT
               key={route.key}
               accessibilityRole="button"
               accessibilityState={isFocused ? { selected: true } : {}}
-              
               onPress={onPress}
               style={styles.tabItem}
               activeOpacity={0.8}
@@ -87,9 +84,9 @@ export default function MainTabNavigator() {
       }}
     >
       <Tab.Screen name="Dashboard" component={DashboardScreen} options={{ headerShown: false }} />
-      <Tab.Screen name="Projects" component={ProjectsScreen} />
-      <Tab.Screen name="Tickets" component={TicketsScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen name="Projects" component={ProjectsScreen} options={{ headerShown: false }} />
+      <Tab.Screen name="Tickets" component={TicketsScreen} options={{ headerShown: false }} />
+      <Tab.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
     </Tab.Navigator>
   );
 }
@@ -103,7 +100,7 @@ const getStyles = (theme: AppTheme) => StyleSheet.create({
     height: 68,
     borderRadius: 34,
     borderWidth: 1,
-    backgroundColor: theme.isDark ? '#040D12' : '#FFFFFF', // Solid Background
+    backgroundColor: theme.isDark ? '#040D12' : '#FFFFFF', 
     ...theme.shadows.glass,
     shadowColor: theme.colors.primary,
     shadowOpacity: 0.6,
@@ -146,6 +143,3 @@ const getStyles = (theme: AppTheme) => StyleSheet.create({
     shadowRadius: 8,
   }
 });
-
-
-

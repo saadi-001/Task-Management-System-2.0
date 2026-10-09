@@ -1,4 +1,5 @@
 const projectRepository = require("../repositories/projectRepository");
+const notificationService = require("./notificationService");
 
 // Create Project
 const createProject = async (projectData) => {
@@ -31,13 +32,15 @@ const getProjectsByOrganizationId = async (organizationId) => {
 };
 
 // Update Project
-const updateProject = async (projectId, projectData) => {
+const updateProject = async (projectId, projectData, updaterId) => {
     await getProjectById(projectId);
 
-    return await projectRepository.updateProject(
+    const project = await projectRepository.updateProject(
         projectId,
         projectData
     );
+    await notificationService.projectUpdated(project, updaterId);
+    return project;
 };
 
 // Link Existing Project to Organization

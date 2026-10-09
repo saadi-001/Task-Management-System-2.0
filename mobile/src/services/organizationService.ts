@@ -19,7 +19,7 @@ export const organizationService = {
     return await fetchApi(`/organizations/${id}`, { method: 'GET' });
   },
 
-  async createOrganization(data: { name: string; logo?: string; theme?: string; ownerID: number }): Promise<{ success: boolean; data: Organization }> {
+  async createOrganization(data: { name: string; email?: string; contactNo?: string; logo?: string; theme?: string; ownerID: number }): Promise<{ success: boolean; data: Organization }> {
     return await fetchApi('/organizations', {
       method: 'POST',
       body: JSON.stringify(data),

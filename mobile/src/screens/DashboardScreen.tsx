@@ -1,8 +1,8 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { View, StyleSheet, ScrollView, Text, TouchableOpacity, Animated, Platform } from 'react-native';
+﻿import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, Animated, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../context/AuthContext';
 import { dashboardService } from '../services/dashboardService';
 import { useThemeContext } from '../context/ThemeContext';
@@ -117,7 +117,7 @@ export default function DashboardScreen() {
         
         <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }], paddingHorizontal: theme.spacing.lg }}>
           
-          <TaskProgressBar total={stats.tickets || 0} done={stats.doneTickets || 0} inProgress={stats.inProgressTickets || 0} />
+          <TaskProgressBar total={stats.tickets || 0} done={stats.doneTickets || 0} inProgress={stats.inProgressTickets || 0} onPress={() => navigation.navigate("Tickets")} />
 
           
           <SectionHeader title="METRICS" />
@@ -130,9 +130,24 @@ export default function DashboardScreen() {
 
           <SectionHeader title="SYSTEM ACTIONS" />
           <View style={styles.actionsGrid}>
-            <QuickActionCard title="Deploy Project" iconName="folder-plus" onPress={() => navigation.navigate('CreateProject')} />
-            <QuickActionCard title="Initialize Task" iconName="file-plus" onPress={() => navigation.navigate('CreateTicket')} />
-            <QuickActionCard title="Scale Org" iconName="briefcase" onPress={() => navigation.navigate('CreateOrg')} />
+            <QuickActionCard 
+              title="Deploy Project" 
+              description="Create a new project environment"
+              iconName="folder-plus" 
+              onPress={() => navigation.navigate('CreateProject')} 
+            />
+            <QuickActionCard 
+              title="Create Task" 
+              description="Assign a new ticket to a team member"
+              iconName="file-plus" 
+              onPress={() => navigation.navigate('CreateTicket')} 
+            />
+            <QuickActionCard 
+              title="Scale Org" 
+              description="Register a new organizational unit"
+              iconName="briefcase" 
+              onPress={() => navigation.navigate('CreateOrg')} 
+            />
           </View>
 
           <SectionHeader title="RECENT TASKS" />
@@ -155,7 +170,7 @@ const getStyles = (theme: AppTheme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   scrollContent: { paddingBottom: 160 },
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: theme.spacing.xl },
-  actionsGrid: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: theme.spacing.xl },
+  actionsGrid: { flexDirection: 'column', marginBottom: theme.spacing.xl },
   
   taskCard: {
     backgroundColor: theme.colors.surface,

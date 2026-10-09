@@ -17,7 +17,8 @@ const uploadAttachment = async (req, res) => {
         const attachment =
             await attachmentService.createAttachment(
                 req.file,
-                ticketId
+                ticketId,
+                req.user.UserID
             );
 
         return res.status(201).json({

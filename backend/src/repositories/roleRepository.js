@@ -171,6 +171,15 @@ const getUserRoles = async (userId) => {
     });
 };
 
+const getUserIdsForRole = async (roleId) => {
+    const assignments = await prisma.userrole.findMany({
+        where: { RoleID: Number(roleId) },
+        select: { UserID: true }
+    });
+
+    return assignments.map((assignment) => assignment.UserID);
+};
+
 // ==============================
 // Get Permissions Assigned To Role
 // ==============================
@@ -256,5 +265,6 @@ module.exports = {
     assignRoleToUser,
     removeRoleFromUser,
     getUserRoles,
+    getUserIdsForRole,
     getUserPermissions
 };

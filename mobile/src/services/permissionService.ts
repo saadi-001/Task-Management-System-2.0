@@ -1,8 +1,8 @@
-import { fetchApi } from './api';
+﻿import { fetchApi } from './api';
 
 export interface Permission {
   PermissionID: number;
-  PermissionName: string;
+  Name: string;
 }
 
 export const permissionService = {

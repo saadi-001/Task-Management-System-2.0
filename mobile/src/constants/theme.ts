@@ -109,7 +109,14 @@ export const createTheme = (isDark: boolean) => {
         shadowRadius: 16,
         elevation: 8,
       },
-      glass: {
+      medium: {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 4,
+    },
+    glass: {
         shadowColor: isDark ? '#000000' : '#4B5563',
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: isDark ? 0.5 : 0.1,

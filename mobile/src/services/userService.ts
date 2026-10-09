@@ -1,4 +1,4 @@
-import { fetchApi } from './api';
+﻿import { fetchApi } from './api';
 
 export interface User {
   UserID: number;
@@ -14,4 +14,11 @@ export const userService = {
   async getUser(id: number): Promise<{ success: boolean; data: User }> {
     return await fetchApi(`/users/${id}`, { method: 'GET' });
   },
+
+  async updateUser(id: number, data: { Name?: string; Email?: string }): Promise<{ success: boolean; data: User }> {
+    return await fetchApi(`/users/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
 };

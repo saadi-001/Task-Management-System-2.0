@@ -46,7 +46,7 @@ export default function UsersScreen() {
       setUsers(res.data || []);
     } catch (err: any) {
       if (err.response?.status === 403) {
-        setError('Unauthorized: Administrator clearance required.');
+        setError('Unauthorized: Administrator access required.');
       } else {
         setError('Failed to fetch team directory.');
       }
@@ -73,7 +73,7 @@ export default function UsersScreen() {
     </TouchableOpacity>
   );
 
-  if (loading) return <LoadingScreen message="Decrypting Directory..." />;
+  if (loading) return <LoadingScreen message="Loading Users..." />;
 
   return (
     <View style={styles.container}>

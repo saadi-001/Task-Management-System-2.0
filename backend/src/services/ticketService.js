@@ -77,6 +77,12 @@ const updateTicket = async (ticketId, ticketData, userId) => {
 
     // Check status workflow only when Status is being changed
     let statusChanged = false;
+    const priorityChanged =
+        ticketData.Priority !== undefined &&
+        ticketData.Priority !== existingTicket.Priority;
+    const assigneeChanged =
+        ticketData.AssignedTo !== undefined &&
+        Number(ticketData.AssignedTo) !== Number(existingTicket.AssignedTo);
     if (ticketData.Status) {
         const currentStatus = existingTicket.Status;
         const newStatus = ticketData.Status;
@@ -113,8 +119,30 @@ const updateTicket = async (ticketId, ticketData, userId) => {
         userId
     );
 
+    if (assigneeChanged) {
+        await notificationService.ticketReassigned(
+            updatedTicket,
+            existingTicket.AssignedTo,
+            userId
+        );
+    }
+
     if (statusChanged) {
-        await notificationService.ticketStatusChanged(updatedTicket, userId, "User");
+        if (updatedTicket.Status === "Done") {
+            await notificationService.ticketCompleted(updatedTicket, userId);
+        } else if (existingTicket.Status === "Done") {
+            await notificationService.ticketReopened(updatedTicket, userId);
+        } else {
+            await notificationService.ticketStatusChanged(updatedTicket, userId, "User");
+        }
+    }
+
+    if (priorityChanged) {
+        await notificationService.ticketPriorityChanged(updatedTicket, userId);
+    }
+
+    if (!statusChanged && !priorityChanged && !assigneeChanged) {
+        await notificationService.ticketUpdated(updatedTicket, userId);
     }
 
     return updatedTicket;
@@ -144,7 +172,14 @@ const assignTicket = async (
     assignedUserId,
     currentUserId
 ) => {
-    await getTicketById(ticketId);
+    const existingTicket = await getTicketById(ticketId);
+
+    // Handle unassign
+    if (!assignedUserId || Number(assignedUserId) === 0) {
+        const ticket = await ticketRepository.assignTicket(ticketId, 0);
+        await activityService.createActivity("Ticket unassigned", ticketId, currentUserId);
+        return ticket;
+    }
 
     // Check if assigned user exists
     const user = await authRepository.findUserById(
@@ -177,9 +212,11 @@ const assignTicket = async (
         currentUserId
     );
 
-    if (assignedUserId !== currentUserId) {
-        await notificationService.ticketAssigned(ticket, assignedUserId, currentUserId);
-    }
+    await notificationService.ticketReassigned(
+        ticket,
+        existingTicket.AssignedTo,
+        currentUserId
+    );
 
     return ticket;
 };

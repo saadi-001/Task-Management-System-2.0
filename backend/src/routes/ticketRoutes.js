@@ -262,6 +262,13 @@ router.patch(
     ticketController.assignTicket
 );
 
+router.put(
+    "/:id/assign",
+    authMiddleware,
+    permissionMiddleware("ASSIGN_TICKET"),
+    ticketController.assignTicket
+);
+
 /**
  * @swagger
  * /api/tickets/{id}:

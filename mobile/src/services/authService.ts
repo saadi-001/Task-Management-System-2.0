@@ -27,10 +27,10 @@ export const authService = {
     });
   },
 
-  async signup(name: string, email: string, password: string): Promise<any> {
+  async signup(name: string, email: string, password: string, acceptedTerms: boolean): Promise<any> {
     return await fetchApi('/auth/signup', {
       method: 'POST',
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify({ name, email, password, acceptedTerms }),
     });
   },
 
