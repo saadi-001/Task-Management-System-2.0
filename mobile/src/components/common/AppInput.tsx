@@ -67,25 +67,22 @@ const getStyles = (theme: AppTheme) => StyleSheet.create({
   label: {
     ...theme.typography.caption,
     fontWeight: '600',
-    color: theme.colors.textSecondary,
-    marginBottom: 6,
+    color: theme.colors.textPrimary,
+    marginBottom: 8,
     marginLeft: 4,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
   inputWrapper: {
-    backgroundColor: theme.isDark ? '#2C2C2E' : '#E5E5EA', // iOS system fill colors
-    borderRadius: 14,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderRadius: theme.radius.md,
     overflow: 'hidden',
     position: 'relative',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'transparent',
+    justifyContent: 'center'
   },
   input: {
     paddingHorizontal: 16,
     paddingVertical: 16,
-    fontSize: 17, // iOS standard font size
+    fontSize: 16,
     color: theme.colors.textPrimary,
   },
   eyeIcon: {
@@ -93,11 +90,11 @@ const getStyles = (theme: AppTheme) => StyleSheet.create({
     right: 16,
     height: '100%',
     justifyContent: 'center',
-    zIndex: 10,
+    alignItems: 'center',
   },
   errorText: {
+    ...theme.typography.caption,
     color: theme.colors.error,
-    fontSize: 13,
     marginTop: 6,
     marginLeft: 4,
   },

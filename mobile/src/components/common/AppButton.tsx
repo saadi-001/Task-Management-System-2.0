@@ -88,8 +88,8 @@ export default function AppButton({ title, loading = false, variant = 'primary',
 
 const getStyles = (theme: AppTheme) => StyleSheet.create({
   button: {
-    height: 54,
-    borderRadius: 14,
+    height: 56,
+    borderRadius: theme.radius.md,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: theme.spacing.lg,
@@ -99,7 +99,7 @@ const getStyles = (theme: AppTheme) => StyleSheet.create({
     borderColor: 'transparent',
   },
   secondaryBorder: {
-    borderColor: theme.isDark ? '#38383A' : '#C6C6C8',
+    borderColor: theme.colors.border,
   },
   dangerBorder: {
     borderColor: theme.colors.error,
@@ -108,9 +108,10 @@ const getStyles = (theme: AppTheme) => StyleSheet.create({
     borderColor: theme.colors.glassBorder,
   },
   text: {
-    fontWeight: '600',
-    fontSize: 17, // iOS Button Font Size
-    color: '#FFFFFF',
-    letterSpacing: 0.2,
+    ...theme.typography.body,
+    fontWeight: '700',
+    fontSize: 16,
+    color: theme.colors.textPrimary,
+    letterSpacing: 0.5,
   },
 });
