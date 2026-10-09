@@ -89,7 +89,9 @@ export default function UserDetailsScreen() {
           <Feather name="arrow-left" size={24} color={theme.colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Personnel File</Text>
-        <View style={{ width: 40 }} />
+        <TouchableOpacity onPress={() => navigation.navigate('EditProfile', { user: user })} style={styles.backBtn}>
+          <Feather name="edit-2" size={20} color={theme.colors.primary} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
