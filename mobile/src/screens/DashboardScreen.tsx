@@ -33,7 +33,7 @@ interface DashboardStats {
 }
 
 export default function DashboardScreen() {
-  const { theme, themeOption } = useThemeContext();
+  const { theme } = useThemeContext();
   const styles = getStyles(theme);
   const { user, roles } = useAuth();
   const [loading, setLoading] = useState(true);
