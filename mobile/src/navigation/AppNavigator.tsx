@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { StatusBar } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
@@ -23,6 +23,7 @@ import UsersScreen from '../screens/UsersScreen';
 import PermissionsScreen from '../screens/PermissionsScreen';
 import LoadingScreen from '../components/common/LoadingScreen';
 import NotificationManager from '../components/common/NotificationManager';
+import DesignPreviewScreen from '../screens/DesignPreviewScreen';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -44,6 +45,7 @@ export type RootStackParamList = {
   Permissions: undefined;
   Organizations: undefined;
   Users: undefined;
+  DesignPreview: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -87,6 +89,7 @@ export default function AppNavigator() {
             <Stack.Screen name="CreateOrg" component={CreateOrgScreen} options={{ title: 'Create Organization', presentation: 'modal' }} />
             <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false }} />
             <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ headerShown: false, presentation: 'modal' }} />
+            <Stack.Screen name="DesignPreview" component={DesignPreviewScreen} options={{ headerShown: false, animation: 'slide_from_bottom' }} />
           </>
         )}
         <Stack.Screen name="Roles" component={RolesScreen} options={{ headerShown: false }} />

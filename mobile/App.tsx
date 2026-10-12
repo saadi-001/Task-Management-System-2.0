@@ -6,6 +6,7 @@ import AppNavigator from "./src/navigation/AppNavigator";
 import { AuthProvider } from "./src/context/AuthContext";
 import { ThemeProvider } from "./src/context/ThemeContext";
 import { AlertProvider } from "./src/context/AlertContext";
+import { WorkspaceProvider } from "./src/context/WorkspaceContext";
 import { ensureFeatherLoaded } from "./src/utils/fontLoader";
 
 // Suppress known harmless dev-mode warnings globally
@@ -37,12 +38,18 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <ThemeProvider><AlertProvider><AuthProvider>
-        <NavigationContainer>
-          <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
-          <AppNavigator />
-        </NavigationContainer>
-      </AuthProvider></AlertProvider></ThemeProvider>
+      <ThemeProvider>
+        <AlertProvider>
+          <AuthProvider>
+            <WorkspaceProvider>
+              <NavigationContainer>
+                <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+                <AppNavigator />
+              </NavigationContainer>
+            </WorkspaceProvider>
+          </AuthProvider>
+        </AlertProvider>
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }

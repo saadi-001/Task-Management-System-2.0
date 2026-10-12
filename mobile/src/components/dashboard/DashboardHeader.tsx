@@ -1,4 +1,4 @@
-﻿
+
 import { View, Text, StyleSheet, Animated, TouchableOpacity, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
@@ -108,24 +108,39 @@ export default function DashboardHeader({ userName = 'Agent', role = 'Member' }:
           </View>
         </View>
 
-        {/* Right Side: Notification Bell */}
-        <TouchableOpacity 
-          style={styles.bellButton} 
-          activeOpacity={0.7} 
-          onPress={() => navigation.navigate('Notifications')}
-        >
-          <Feather name="bell" size={22} color={theme.colors.textPrimary} />
-          
-          {/* Unseen Indication (Badge or Pulsing Dot) */}
-          {unreadCount > 0 && (
-            <View style={styles.badgeContainer}>
-              <Animated.View style={[styles.pulseRing, { transform: [{ scale: pulseAnim }], opacity: pulseAnim.interpolate({ inputRange: [1, 1.5], outputRange: [0.5, 0] }) }]} />
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+        {/* Right Side: Header Actions */}
+        <View style={styles.headerActions}>
+          <TouchableOpacity 
+            style={styles.previewButton} 
+            activeOpacity={0.7}
+            accessibilityLabel="Preview Next-Gen Workspace Design"
+            accessibilityRole="button"
+            onPress={() => navigation.navigate('DesignPreview')}
+          >
+            <Feather name="compass" size={20} color={theme.colors.primary} />
+            <View style={styles.previewDot} />
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.bellButton} 
+            activeOpacity={0.7} 
+            accessibilityLabel="Notifications"
+            accessibilityRole="button"
+            onPress={() => navigation.navigate('Notifications')}
+          >
+            <Feather name="bell" size={22} color={theme.colors.textPrimary} />
+            
+            {/* Unseen Indication (Badge or Pulsing Dot) */}
+            {unreadCount > 0 && (
+              <View style={styles.badgeContainer}>
+                <Animated.View style={[styles.pulseRing, { transform: [{ scale: pulseAnim }], opacity: pulseAnim.interpolate({ inputRange: [1, 1.5], outputRange: [0.5, 0] }) }]} />
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+                </View>
               </View>
-            </View>
-          )}
-        </TouchableOpacity>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
     </Animated.View>
   );
@@ -206,6 +221,26 @@ const getStyles = (theme: AppTheme) => StyleSheet.create({
     letterSpacing: 1,
   },
   
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  previewButton: {
+    width: 44, height: 44,
+    borderRadius: 22,
+    backgroundColor: theme.isDark ? 'rgba(45, 212, 191, 0.12)' : 'rgba(13, 148, 136, 0.12)',
+    justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1, borderColor: theme.colors.borderHighlight,
+    position: 'relative',
+    marginRight: 8,
+  },
+  previewDot: {
+    position: 'absolute',
+    top: 8, right: 8,
+    width: 6, height: 6,
+    borderRadius: 3,
+    backgroundColor: theme.colors.primary,
+  },
   bellButton: {
     width: 44, height: 44,
     borderRadius: 22,
