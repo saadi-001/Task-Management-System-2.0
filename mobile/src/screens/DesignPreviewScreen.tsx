@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Platform,
   RefreshControl,
   StatusBar,
+  TextInput,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
@@ -17,6 +18,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useThemeContext } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { useWorkspace } from '../context/WorkspaceContext';
+import { notificationService } from '../services/notificationService';
 import { AppTheme } from '../constants/theme';
 import { Ticket } from '../services/ticketService';
 import { Project } from '../services/projectService';
@@ -46,18 +48,35 @@ export default function DesignPreviewScreen() {
   // Local state
   const [activeTab, setActiveTab] = useState<FilterTab>('my');
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+  const [searchTaskQuery, setSearchTaskQuery] = useState('');
+  const [searchOrgQuery, setSearchOrgQuery] = useState('');
   const [isWorkspaceDrawerOpen, setIsWorkspaceDrawerOpen] = useState(false);
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
 
   // Animations
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(20)).current;
+  const slideAnim = useRef(new Animated.Value(16)).current;
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
-      Animated.spring(slideAnim, { toValue: 0, tension: 50, friction: 8, useNativeDriver: true }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 350, useNativeDriver: true }),
+      Animated.spring(slideAnim, { toValue: 0, tension: 55, friction: 8, useNativeDriver: true }),
     ]).start();
+
+    // Fetch actual unread notification count
+    const loadUnreadCount = async () => {
+      try {
+        const res = await notificationService.getNotifications();
+        if (res && res.success && Array.isArray(res.data)) {
+          const unread = res.data.filter((n: any) => !n.IsRead).length;
+          setUnreadNotifications(unread);
+        }
+      } catch (e) {
+        // silent fallback
+      }
+    };
+    loadUnreadCount();
   }, []);
 
   const getGreeting = () => {
@@ -67,50 +86,82 @@ export default function DesignPreviewScreen() {
     return 'Good Evening';
   };
 
-  // Filtered tasks based on activeTab and optional selectedProjectId
-  const displayedTickets = useMemo(() => {
-    let list = activeTickets;
-
-    // Filter by project if one is selected in the carousel
-    if (selectedProjectId !== null) {
-      list = list.filter((t) => t.ProjectID === selectedProjectId);
-    }
-
-    switch (activeTab) {
-      case 'my':
-        return user ? list.filter((t) => t.AssignedTo === user.UserID) : list;
-      case 'in_progress':
-        return list.filter((t) => {
-          const s = t.Status?.toLowerCase();
-          return s === 'in progress' || s === 'testing' || s === 'review';
-        });
-      case 'high_priority':
-        return list.filter((t) => {
-          const p = t.Priority?.toLowerCase();
-          return p === 'high' || p === 'urgent';
-        });
-      case 'all':
-      default:
-        return list;
-    }
-  }, [activeTickets, activeTab, selectedProjectId, user]);
-
-  // Metrics calculation
+  // Metrics: accurate, verifiable calculations directly from backend data
   const metrics = useMemo(() => {
     const total = activeTickets.length;
+    const myCount = myTickets.length;
     const done = activeTickets.filter((t) => t.Status?.toLowerCase() === 'done').length;
     const inProgress = activeTickets.filter((t) => {
       const s = t.Status?.toLowerCase();
-      return s === 'in progress' || s === 'testing';
+      return s === 'in progress' || s === 'testing' || s === 'review';
     }).length;
     const high = activeTickets.filter((t) => {
       const p = t.Priority?.toLowerCase();
       return p === 'high' || p === 'urgent';
     }).length;
-    const velocity = total > 0 ? Math.round((done / total) * 100) : 0;
+    const completionRate = total > 0 ? Math.round((done / total) * 100) : 0;
 
-    return { total, done, inProgress, high, velocity };
-  }, [activeTickets]);
+    return { total, myCount, done, inProgress, high, completionRate };
+  }, [activeTickets, myTickets]);
+
+  // Filtered tasks based on activeTab, project filter, and in-feed search query
+  const displayedTickets = useMemo(() => {
+    let list = activeTickets;
+
+    // Filter by project if selected
+    if (selectedProjectId !== null) {
+      list = list.filter((t) => t.ProjectID === selectedProjectId);
+    }
+
+    // Filter by tab
+    switch (activeTab) {
+      case 'my':
+        list = user ? list.filter((t) => t.AssignedTo === user.UserID) : list;
+        break;
+      case 'in_progress':
+        list = list.filter((t) => {
+          const s = t.Status?.toLowerCase();
+          return s === 'in progress' || s === 'testing' || s === 'review';
+        });
+        break;
+      case 'high_priority':
+        list = list.filter((t) => {
+          const p = t.Priority?.toLowerCase();
+          return p === 'high' || p === 'urgent';
+        });
+        break;
+      case 'all':
+      default:
+        break;
+    }
+
+    // Filter by search query
+    if (searchTaskQuery.trim() !== '') {
+      const q = searchTaskQuery.toLowerCase().trim();
+      list = list.filter((t) => {
+        const matchesTitle = t.Title?.toLowerCase().includes(q);
+        const matchesDesc = t.Description?.toLowerCase().includes(q);
+        const matchesId = `tm-${t.TaskID}`.includes(q) || String(t.TaskID).includes(q);
+        return matchesTitle || matchesDesc || matchesId;
+      });
+    }
+
+    return list;
+  }, [activeTickets, activeTab, selectedProjectId, searchTaskQuery, user]);
+
+  // Filtered organizations for the switcher drawer
+  const filteredOrganizations = useMemo(() => {
+    if (!searchOrgQuery.trim()) return organizations;
+    const q = searchOrgQuery.toLowerCase().trim();
+    return organizations.filter(
+      (org) => org.Name.toLowerCase().includes(q) || String(org.OrganizationID).includes(q)
+    );
+  }, [organizations, searchOrgQuery]);
+
+  const selectedProjectObj = useMemo(() => {
+    if (!selectedProjectId) return null;
+    return activeProjects.find((p) => p.ProjectID === selectedProjectId) || null;
+  }, [selectedProjectId, activeProjects]);
 
   const getStatusBadge = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -123,7 +174,7 @@ export default function DesignPreviewScreen() {
       case 'testing':
         return { color: theme.colors.stats.orange.color, bg: theme.colors.stats.orange.bg, label: 'Testing' };
       default:
-        return { color: theme.colors.textSecondary, bg: theme.colors.iconBg, label: status || 'Pending' };
+        return { color: theme.colors.textSecondary, bg: theme.colors.iconBg, label: status || 'Open' };
     }
   };
 
@@ -149,35 +200,45 @@ export default function DesignPreviewScreen() {
     <View style={styles.container}>
       <StatusBar barStyle={theme.isDark ? 'light-content' : 'dark-content'} />
 
-      {/* 1. TOP PREVIEW CONTROL BANNER (SAFE MODE) */}
-      <View style={styles.previewControlBar}>
+      {/* =========================================================================
+          1. SAFE-MODE PREVIEW TOOLBAR (COMPACT & RESPONSIVE ACROSS ALL DEVICES)
+         ========================================================================= */}
+      <View style={styles.previewToolbar}>
+        {/* Left: Return to current working app */}
         <TouchableOpacity
-          style={styles.backButton}
+          style={styles.toolbarBackBtn}
           activeOpacity={0.7}
+          accessibilityLabel="Back to Current Design"
+          accessibilityRole="button"
           onPress={() => navigation.goBack()}
         >
-          <Feather name="arrow-left" size={16} color={theme.colors.textPrimary} />
-          <Text style={styles.backButtonText}>Current Design</Text>
+          <Feather name="arrow-left" size={15} color={theme.colors.textPrimary} />
+          <Text style={styles.toolbarBackText} numberOfLines={1}>Current Design</Text>
         </TouchableOpacity>
 
-        <View style={styles.previewTagContainer}>
-          <View style={styles.pulsingDot} />
-          <Text style={styles.previewTagText}>SMART WORKSPACE PREVIEW</Text>
+        {/* Center: Preview status pill */}
+        <View style={styles.toolbarCenterPill}>
+          <View style={styles.toolbarPulsingDot} />
+          <Text style={styles.toolbarCenterText} numberOfLines={1}>PREVIEW MODE</Text>
         </View>
 
+        {/* Right: Use design action */}
         <TouchableOpacity
-          style={styles.applyButton}
+          style={styles.toolbarApplyBtn}
           activeOpacity={0.7}
+          accessibilityLabel="Use this design"
+          accessibilityRole="button"
           onPress={() => setIsApplyModalOpen(true)}
         >
           <Feather name="check" size={14} color="#FFFFFF" />
-          <Text style={styles.applyButtonText}>Use This</Text>
+          <Text style={styles.toolbarApplyText} numberOfLines={1}>Use Design</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -189,7 +250,9 @@ export default function DesignPreviewScreen() {
       >
         <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
           
-          {/* 2. PERSONALIZED WORKSPACE HEADER */}
+          {/* =========================================================================
+              2. PERSONAL CONTEXT HEADER
+             ========================================================================= */}
           <View style={styles.headerCard}>
             <LinearGradient
               colors={[theme.colors.primaryGlow, 'transparent']}
@@ -199,31 +262,51 @@ export default function DesignPreviewScreen() {
             />
 
             <View style={styles.headerTopRow}>
-              <View style={styles.userInfo}>
+              <View style={styles.userInfoCol}>
                 <Text style={styles.greetingText}>{getGreeting()}</Text>
-                <Text style={styles.userNameText} numberOfLines={1}>
-                  {user?.Name || 'Workspace Member'}
-                </Text>
+                <View style={styles.nameRow}>
+                  <Text style={styles.userNameText} numberOfLines={1}>
+                    {user?.Name || 'Workspace Member'}
+                  </Text>
+                  <View style={styles.rolePill}>
+                    <Text style={styles.rolePillText}>{(roles?.[0] || 'Member').toUpperCase()}</Text>
+                  </View>
+                </View>
               </View>
 
+              {/* Notification Button */}
               <TouchableOpacity
                 style={styles.notificationBtn}
                 activeOpacity={0.7}
+                accessibilityLabel="Notifications"
                 onPress={() => navigation.navigate('Notifications')}
               >
                 <Feather name="bell" size={20} color={theme.colors.textPrimary} />
+                {unreadNotifications > 0 && (
+                  <View style={styles.notifBadge}>
+                    <Text style={styles.notifBadgeText}>
+                      {unreadNotifications > 9 ? '9+' : unreadNotifications}
+                    </Text>
+                  </View>
+                )}
               </TouchableOpacity>
             </View>
 
-            {/* SMART WORKSPACE SELECTOR PILL */}
+            {/* =========================================================================
+                3. SMART WORKSPACE SELECTOR (CORE ARCHITECTURE)
+               ========================================================================= */}
             <TouchableOpacity
               style={styles.workspacePill}
               activeOpacity={0.8}
-              onPress={() => setIsWorkspaceDrawerOpen(true)}
+              accessibilityLabel="Switch active workspace"
+              onPress={() => {
+                setSearchOrgQuery('');
+                setIsWorkspaceDrawerOpen(true);
+              }}
             >
               <View style={styles.workspacePillLeft}>
-                <View style={styles.orgAvatarMini}>
-                  <Text style={styles.orgAvatarText}>
+                <View style={styles.orgAvatarBadge}>
+                  <Text style={styles.orgAvatarBadgeText}>
                     {selectedOrg ? selectedOrg.Name.charAt(0).toUpperCase() : '🌐'}
                   </Text>
                 </View>
@@ -232,8 +315,12 @@ export default function DesignPreviewScreen() {
                   <Text style={styles.workspaceName} numberOfLines={1}>
                     {selectedOrg ? selectedOrg.Name : 'All Workspaces (Unified)'}
                   </Text>
+                  <Text style={styles.workspaceSubtext} numberOfLines={1}>
+                    {selectedOrg ? `ORG-${selectedOrg.OrganizationID}` : 'Aggregated Workspace Feed'}
+                  </Text>
                 </View>
               </View>
+
               <View style={styles.workspacePillRight}>
                 <View style={styles.projectCountBadge}>
                   <Text style={styles.projectCountText}>{activeProjects.length} Proj</Text>
@@ -243,84 +330,170 @@ export default function DesignPreviewScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* 3. WORKSPACE VELOCITY & PROGRESS STRIP */}
-          <View style={styles.statsStrip}>
-            <View style={styles.statBox}>
-              <Text style={styles.statValue}>{metrics.total}</Text>
-              <Text style={styles.statLabel}>Active Tasks</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statBox}>
-              <Text style={[styles.statValue, { color: theme.colors.stats.blue.color }]}>
-                {metrics.inProgress}
-              </Text>
-              <Text style={styles.statLabel}>In Progress</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statBox}>
-              <Text style={[styles.statValue, { color: theme.colors.success }]}>
-                {metrics.done}
-              </Text>
-              <Text style={styles.statLabel}>Completed</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statBox}>
-              <Text style={[styles.statValue, { color: theme.colors.primary }]}>
-                {metrics.velocity}%
-              </Text>
-              <Text style={styles.statLabel}>Velocity</Text>
-            </View>
+          {/* =========================================================================
+              4. ACTIONABLE METRICS GRID (ACCURATE & VERIFIABLE)
+             ========================================================================= */}
+          <View style={styles.sectionHeadingRow}>
+            <Text style={styles.sectionHeadingText}>WORKSPACE OVERVIEW</Text>
+            <Text style={styles.sectionHeadingHint}>Tap metric to filter tasks</Text>
           </View>
 
-          {/* Progress Bar Track */}
-          <View style={styles.progressTrackWrapper}>
-            <View style={[styles.progressTrackFill, { width: `${Math.min(metrics.velocity, 100)}%` }]} />
-          </View>
-
-          {/* 4. FAST ACTIONS ROW */}
-          <View style={styles.quickActionsRow}>
+          <View style={styles.metricsGrid}>
+            {/* Metric 1: Active Tasks (Total) */}
             <TouchableOpacity
-              style={styles.actionChip}
+              style={[styles.metricCard, activeTab === 'all' && styles.metricCardActive]}
+              activeOpacity={0.7}
+              onPress={() => setActiveTab('all')}
+            >
+              <View style={styles.metricCardHeader}>
+                <Feather name="layers" size={16} color={theme.colors.textPrimary} />
+                <Text style={styles.metricValText}>{metrics.total}</Text>
+              </View>
+              <Text style={styles.metricLabelText}>Total Tasks</Text>
+              <Text style={styles.metricSubLabel}>In workspace</Text>
+            </TouchableOpacity>
+
+            {/* Metric 2: Assigned to Me */}
+            <TouchableOpacity
+              style={[styles.metricCard, activeTab === 'my' && styles.metricCardActive]}
+              activeOpacity={0.7}
+              onPress={() => setActiveTab('my')}
+            >
+              <View style={styles.metricCardHeader}>
+                <Feather name="user-check" size={16} color={theme.colors.primary} />
+                <Text style={[styles.metricValText, { color: theme.colors.primary }]}>{metrics.myCount}</Text>
+              </View>
+              <Text style={styles.metricLabelText}>My Tasks</Text>
+              <Text style={styles.metricSubLabel}>Assigned to me</Text>
+            </TouchableOpacity>
+
+            {/* Metric 3: In Progress */}
+            <TouchableOpacity
+              style={[styles.metricCard, activeTab === 'in_progress' && styles.metricCardActive]}
+              activeOpacity={0.7}
+              onPress={() => setActiveTab('in_progress')}
+            >
+              <View style={styles.metricCardHeader}>
+                <Feather name="activity" size={16} color={theme.colors.stats.blue.color} />
+                <Text style={[styles.metricValText, { color: theme.colors.stats.blue.color }]}>{metrics.inProgress}</Text>
+              </View>
+              <Text style={styles.metricLabelText}>In Progress</Text>
+              <Text style={styles.metricSubLabel}>Active execution</Text>
+            </TouchableOpacity>
+
+            {/* Metric 4: High Priority / Urgent */}
+            <TouchableOpacity
+              style={[styles.metricCard, activeTab === 'high_priority' && styles.metricCardActive]}
+              activeOpacity={0.7}
+              onPress={() => setActiveTab('high_priority')}
+            >
+              <View style={styles.metricCardHeader}>
+                <Feather name="alert-circle" size={16} color={theme.colors.error} />
+                <Text style={[styles.metricValText, { color: theme.colors.error }]}>{metrics.high}</Text>
+              </View>
+              <Text style={styles.metricLabelText}>Urgent</Text>
+              <Text style={styles.metricSubLabel}>Requires attention</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Progress Completion Indicator */}
+          <View style={styles.progressContainer}>
+            <View style={styles.progressHeaderRow}>
+              <Text style={styles.progressLabel}>Completion Progress</Text>
+              <Text style={styles.progressPercentText}>
+                {metrics.done} of {metrics.total} ({metrics.completionRate}%)
+              </Text>
+            </View>
+            <View style={styles.progressBarTrack}>
+              <View style={[styles.progressBarFill, { width: `${Math.min(metrics.completionRate, 100)}%` }]} />
+            </View>
+          </View>
+
+          {/* =========================================================================
+              5. QUICK ACTIONS (RESPONSIVE 2x2 ERGONOMIC GRID)
+             ========================================================================= */}
+          <View style={styles.sectionHeadingRow}>
+            <Text style={styles.sectionHeadingText}>QUICK ACTIONS</Text>
+          </View>
+
+          <View style={styles.quickActionsGrid}>
+            <TouchableOpacity
+              style={styles.actionGridCard}
               activeOpacity={0.7}
               onPress={() => navigation.navigate('CreateTicket')}
             >
-              <Feather name="plus" size={16} color={theme.colors.primary} />
-              <Text style={styles.actionChipText}>New Task</Text>
+              <View style={[styles.actionIconWrap, { backgroundColor: theme.colors.primaryGlow }]}>
+                <Feather name="plus-circle" size={18} color={theme.colors.primary} />
+              </View>
+              <View style={styles.actionTextCol}>
+                <Text style={styles.actionTitle}>New Task</Text>
+                <Text style={styles.actionDesc}>Create & assign ticket</Text>
+              </View>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.actionChip}
+              style={styles.actionGridCard}
               activeOpacity={0.7}
               onPress={() => navigation.navigate('CreateProject', { initialOrgId: selectedOrgId || undefined })}
             >
-              <Feather name="folder-plus" size={16} color={theme.colors.stats.blue.color} />
-              <Text style={styles.actionChipText}>New Project</Text>
+              <View style={[styles.actionIconWrap, { backgroundColor: theme.colors.stats.blue.bg }]}>
+                <Feather name="folder-plus" size={18} color={theme.colors.stats.blue.color} />
+              </View>
+              <View style={styles.actionTextCol}>
+                <Text style={styles.actionTitle}>New Project</Text>
+                <Text style={styles.actionDesc}>Deploy project unit</Text>
+              </View>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.actionChip}
+              style={styles.actionGridCard}
               activeOpacity={0.7}
-              onPress={() => navigation.navigate('Organizations')}
+              onPress={() => {
+                setSearchOrgQuery('');
+                setIsWorkspaceDrawerOpen(true);
+              }}
             >
-              <Feather name="briefcase" size={16} color={theme.colors.stats.purple.color} />
-              <Text style={styles.actionChipText}>Workspaces</Text>
+              <View style={[styles.actionIconWrap, { backgroundColor: theme.colors.stats.purple.bg }]}>
+                <Feather name="briefcase" size={18} color={theme.colors.stats.purple.color} />
+              </View>
+              <View style={styles.actionTextCol}>
+                <Text style={styles.actionTitle}>Workspaces</Text>
+                <Text style={styles.actionDesc}>Switch organization</Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.actionGridCard}
+              activeOpacity={0.7}
+              onPress={() => navigation.navigate('Users')}
+            >
+              <View style={[styles.actionIconWrap, { backgroundColor: theme.colors.stats.orange.bg }]}>
+                <Feather name="users" size={18} color={theme.colors.stats.orange.color} />
+              </View>
+              <View style={styles.actionTextCol}>
+                <Text style={styles.actionTitle}>Team Directory</Text>
+                <Text style={styles.actionDesc}>View members & roles</Text>
+              </View>
             </TouchableOpacity>
           </View>
 
-          {/* 5. RELEVANT PROJECTS CAROUSEL */}
+          {/* =========================================================================
+              6. ACCESSIBLE PROJECTS (HORIZONTAL CAROUSEL & 1-TAP FILTER)
+             ========================================================================= */}
           <View style={styles.sectionHeaderRow}>
             <View>
               <Text style={styles.sectionTitle}>ACCESSIBLE PROJECTS</Text>
               <Text style={styles.sectionSubtitle}>
-                {selectedOrg ? `Projects in ${selectedOrg.Name}` : 'All active projects'}
+                {selectedOrg ? `Projects in ${selectedOrg.Name}` : 'All authorized workspace projects'}
               </Text>
             </View>
+
             {selectedProjectId !== null && (
               <TouchableOpacity
                 onPress={() => setSelectedProjectId(null)}
-                style={styles.clearFilterBadge}
+                style={styles.clearFilterChip}
               >
-                <Text style={styles.clearFilterText}>Clear Filter ✕</Text>
+                <Text style={styles.clearFilterChipText}>Clear Filter ✕</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -341,8 +514,9 @@ export default function DesignPreviewScreen() {
                     style={[styles.projectCard, isSelected && styles.projectCardActive]}
                     activeOpacity={0.8}
                     onPress={() => {
+                      // Toggle project filter
                       if (isSelected) {
-                        navigation.navigate('ProjectDetails', { projectId: p.ProjectID });
+                        setSelectedProjectId(null);
                       } else {
                         setSelectedProjectId(p.ProjectID);
                       }
@@ -350,24 +524,38 @@ export default function DesignPreviewScreen() {
                   >
                     <View style={styles.projectCardTop}>
                       <View style={[styles.projectIconWrap, isSelected && styles.projectIconWrapActive]}>
-                        <Feather name="folder" size={18} color={isSelected ? '#FFFFFF' : theme.colors.primary} />
+                        <Feather name="folder" size={16} color={isSelected ? '#FFFFFF' : theme.colors.primary} />
                       </View>
-                      <View style={styles.projectBadge}>
-                        <Text style={styles.projectBadgeText}>{projectTaskCount} Tasks</Text>
+
+                      <View style={[styles.projectCountTag, isSelected && styles.projectCountTagActive]}>
+                        <Text style={[styles.projectCountTagText, isSelected && { color: theme.colors.primary }]}>
+                          {projectTaskCount} Tasks
+                        </Text>
                       </View>
                     </View>
 
                     <Text style={styles.projectCardName} numberOfLines={1}>
                       {p.Name}
                     </Text>
+
                     <Text style={styles.projectCardDesc} numberOfLines={2}>
-                      {p.Description || 'Active workspace project'}
+                      {p.Description && p.Description.trim() ? p.Description : 'No description provided'}
                     </Text>
 
                     <View style={styles.projectCardFooter}>
-                      <Text style={styles.projectActionHint}>
-                        {isSelected ? 'Open Details →' : 'Filter Tasks'}
+                      <Text style={[styles.projectCardActionText, isSelected && { color: theme.colors.primary }]}>
+                        {isSelected ? '✓ Filtering Feed' : 'Tap to Filter'}
                       </Text>
+
+                      <TouchableOpacity
+                        style={styles.projectDetailsLink}
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          navigation.navigate('ProjectDetails', { projectId: p.ProjectID });
+                        }}
+                      >
+                        <Feather name="external-link" size={14} color={theme.colors.textSecondary} />
+                      </TouchableOpacity>
                     </View>
                   </TouchableOpacity>
                 );
@@ -375,31 +563,41 @@ export default function DesignPreviewScreen() {
             ) : (
               <View style={styles.emptyProjectsCard}>
                 <Feather name="folder" size={24} color={theme.colors.textMuted} />
-                <Text style={styles.emptyProjectsText}>No projects in this workspace</Text>
+                <Text style={styles.emptyProjectsTitle}>No Projects Found</Text>
+                <Text style={styles.emptyProjectsDesc}>
+                  {selectedOrg ? `No projects belong to ${selectedOrg.Name} yet.` : 'No accessible projects in system.'}
+                </Text>
                 <TouchableOpacity
-                  style={styles.emptyCreateBtn}
+                  style={styles.emptyCreateProjectBtn}
                   onPress={() => navigation.navigate('CreateProject', { initialOrgId: selectedOrgId || undefined })}
                 >
-                  <Text style={styles.emptyCreateBtnText}>+ Create Project</Text>
+                  <Text style={styles.emptyCreateProjectText}>+ Create Project</Text>
                 </TouchableOpacity>
               </View>
             )}
           </ScrollView>
 
-          {/* 6. INTELLIGENT WORK FEED ("MY ATTENTION NEEDED") */}
+          {/* =========================================================================
+              7. WORKSPACE FOCUS FEED (SEARCHABLE, FILTERABLE WORK HUB)
+             ========================================================================= */}
           <View style={styles.feedHeaderRow}>
-            <Text style={styles.sectionTitle}>WORKSPACE FOCUS FEED</Text>
-            <Text style={styles.feedCountText}>{displayedTickets.length} items</Text>
+            <View>
+              <Text style={styles.sectionTitle}>WORKSPACE FOCUS FEED</Text>
+              <Text style={styles.sectionSubtitle}>
+                {selectedProjectObj ? `Filtered by ${selectedProjectObj.Name}` : 'Prioritized work items'}
+              </Text>
+            </View>
+            <Text style={styles.feedCountText}>{displayedTickets.length} tasks</Text>
           </View>
 
-          {/* Segmented Filter Control */}
+          {/* Filter Tabs */}
           <View style={styles.segmentedControl}>
             <TouchableOpacity
               style={[styles.segmentBtn, activeTab === 'my' && styles.segmentBtnActive]}
               onPress={() => setActiveTab('my')}
             >
               <Text style={[styles.segmentText, activeTab === 'my' && styles.segmentTextActive]}>
-                My Tasks ({myTickets.length})
+                My Tasks ({metrics.myCount})
               </Text>
             </TouchableOpacity>
 
@@ -408,7 +606,7 @@ export default function DesignPreviewScreen() {
               onPress={() => setActiveTab('in_progress')}
             >
               <Text style={[styles.segmentText, activeTab === 'in_progress' && styles.segmentTextActive]}>
-                In Progress
+                In Progress ({metrics.inProgress})
               </Text>
             </TouchableOpacity>
 
@@ -426,12 +624,30 @@ export default function DesignPreviewScreen() {
               onPress={() => setActiveTab('all')}
             >
               <Text style={[styles.segmentText, activeTab === 'all' && styles.segmentTextActive]}>
-                All
+                All ({metrics.total})
               </Text>
             </TouchableOpacity>
           </View>
 
-          {/* Tasks List */}
+          {/* In-Feed Search Input */}
+          <View style={styles.taskSearchBox}>
+            <Feather name="search" size={16} color={theme.colors.textSecondary} style={{ marginRight: 8 }} />
+            <TextInput
+              style={styles.taskSearchInput}
+              placeholder="Search tasks by title or TM-ID..."
+              placeholderTextColor={theme.colors.textMuted}
+              value={searchTaskQuery}
+              onChangeText={setSearchTaskQuery}
+              clearButtonMode="while-editing"
+            />
+            {searchTaskQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchTaskQuery('')}>
+                <Feather name="x" size={16} color={theme.colors.textSecondary} />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Task Items List */}
           <View style={styles.taskListContainer}>
             {displayedTickets.length > 0 ? (
               displayedTickets.map((task) => {
@@ -442,13 +658,14 @@ export default function DesignPreviewScreen() {
                 return (
                   <TouchableOpacity
                     key={task.TaskID}
-                    style={styles.taskItem}
+                    style={styles.taskCardItem}
                     activeOpacity={0.7}
+                    accessibilityLabel={`Task ${task.Title}`}
                     onPress={() => navigation.navigate('TicketDetails', { ticketId: task.TaskID })}
                   >
-                    <View style={styles.taskItemLeft}>
-                      <View style={[styles.priorityPill, { backgroundColor: priority.bg }]}>
-                        <Feather name={priority.icon} size={12} color={priority.color} />
+                    <View style={styles.taskCardLeft}>
+                      <View style={[styles.priorityIconBadge, { backgroundColor: priority.bg }]}>
+                        <Feather name={priority.icon} size={14} color={priority.color} />
                       </View>
 
                       <View style={styles.taskTextCol}>
@@ -460,15 +677,15 @@ export default function DesignPreviewScreen() {
                             </Text>
                           )}
                         </View>
-                        <Text style={styles.taskTitle} numberOfLines={1}>
+                        <Text style={styles.taskTitleText} numberOfLines={1}>
                           {task.Title}
                         </Text>
                       </View>
                     </View>
 
-                    <View style={styles.taskItemRight}>
-                      <View style={[styles.statusTag, { backgroundColor: status.bg }]}>
-                        <Text style={[styles.statusTagText, { color: status.color }]}>
+                    <View style={styles.taskCardRight}>
+                      <View style={[styles.statusBadge, { backgroundColor: status.bg }]}>
+                        <Text style={[styles.statusBadgeText, { color: status.color }]}>
                           {status.label}
                         </Text>
                       </View>
@@ -478,22 +695,43 @@ export default function DesignPreviewScreen() {
                 );
               })
             ) : (
-              <View style={styles.emptyTasksBox}>
+              <View style={styles.emptyFeedCard}>
                 <Feather name="check-circle" size={32} color={theme.colors.primary} style={{ marginBottom: 8 }} />
-                <Text style={styles.emptyTasksTitle}>No tasks require attention</Text>
-                <Text style={styles.emptyTasksDesc}>
-                  {activeTab === 'my'
+                <Text style={styles.emptyFeedTitle}>No Tasks Found</Text>
+                <Text style={styles.emptyFeedDesc}>
+                  {searchTaskQuery.trim() !== ''
+                    ? `No tasks match search query "${searchTaskQuery}".`
+                    : activeTab === 'my'
                     ? 'You have completed all assigned tasks in this workspace.'
                     : 'No tasks currently match this filter criteria.'}
                 </Text>
+                {searchTaskQuery.trim() !== '' && (
+                  <TouchableOpacity
+                    style={styles.emptyResetBtn}
+                    onPress={() => setSearchTaskQuery('')}
+                  >
+                    <Text style={styles.emptyResetBtnText}>Clear Search Filter</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             )}
           </View>
 
+          {/* Bottom Navigation Hint to full Task List */}
+          <TouchableOpacity
+            style={styles.viewAllTasksBtn}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('Tickets')}
+          >
+            <Text style={styles.viewAllTasksText}>View All Tasks in Task Manager →</Text>
+          </TouchableOpacity>
+
         </Animated.View>
       </ScrollView>
 
-      {/* 7. SMART WORKSPACE SWITCHER DRAWER (MODAL) */}
+      {/* =========================================================================
+          8. SMART WORKSPACE SWITCHER DRAWER (MODAL)
+         ========================================================================= */}
       <Modal
         visible={isWorkspaceDrawerOpen}
         animationType="slide"
@@ -512,7 +750,7 @@ export default function DesignPreviewScreen() {
               <View>
                 <Text style={styles.drawerTitle}>Switch Workspace</Text>
                 <Text style={styles.drawerSubtitle}>
-                  Select an organization to filter your projects and tasks
+                  Choose an organization to contextually filter work
                 </Text>
               </View>
               <TouchableOpacity
@@ -522,6 +760,20 @@ export default function DesignPreviewScreen() {
                 <Feather name="x" size={20} color={theme.colors.textPrimary} />
               </TouchableOpacity>
             </View>
+
+            {/* Search Organizations if multiple */}
+            {organizations.length > 3 && (
+              <View style={styles.drawerSearchBox}>
+                <Feather name="search" size={16} color={theme.colors.textSecondary} style={{ marginRight: 8 }} />
+                <TextInput
+                  style={styles.drawerSearchInput}
+                  placeholder="Search organizations..."
+                  placeholderTextColor={theme.colors.textMuted}
+                  value={searchOrgQuery}
+                  onChangeText={setSearchOrgQuery}
+                />
+              </View>
+            )}
 
             <ScrollView style={styles.drawerList} showsVerticalScrollIndicator={false}>
               {/* Option: All Workspaces (Unified) */}
@@ -535,7 +787,7 @@ export default function DesignPreviewScreen() {
                 </View>
                 <View style={styles.orgItemContent}>
                   <Text style={styles.orgItemName}>All Workspaces (Unified)</Text>
-                  <Text style={styles.orgItemDesc}>View all authorized projects and tasks</Text>
+                  <Text style={styles.orgItemDesc}>View all authorized projects & tasks across system</Text>
                 </View>
                 {selectedOrgId === null && (
                   <Feather name="check-circle" size={20} color={theme.colors.primary} />
@@ -545,9 +797,8 @@ export default function DesignPreviewScreen() {
               <View style={styles.drawerDivider} />
 
               {/* List of actual user organizations from backend */}
-              {organizations.map((org) => {
+              {filteredOrganizations.map((org) => {
                 const isSelected = selectedOrgId === org.OrganizationID;
-                const orgProjectsCount = activeProjects.filter((p) => p.OrganizationID === org.OrganizationID).length;
 
                 return (
                   <TouchableOpacity
@@ -563,7 +814,7 @@ export default function DesignPreviewScreen() {
                     </View>
                     <View style={styles.orgItemContent}>
                       <Text style={styles.orgItemName} numberOfLines={1}>{org.Name}</Text>
-                      <Text style={styles.orgItemDesc}>ID: ORG-{org.OrganizationID}</Text>
+                      <Text style={styles.orgItemDesc}>Organization ID: ORG-{org.OrganizationID}</Text>
                     </View>
                     {isSelected && (
                       <Feather name="check-circle" size={20} color={theme.colors.primary} />
@@ -571,6 +822,12 @@ export default function DesignPreviewScreen() {
                   </TouchableOpacity>
                 );
               })}
+
+              {filteredOrganizations.length === 0 && searchOrgQuery.trim() !== '' && (
+                <View style={styles.emptyOrgsBox}>
+                  <Text style={styles.emptyOrgsText}>No organization matches "{searchOrgQuery}"</Text>
+                </View>
+              )}
             </ScrollView>
 
             <View style={styles.drawerFooter}>
@@ -590,7 +847,9 @@ export default function DesignPreviewScreen() {
         </TouchableOpacity>
       </Modal>
 
-      {/* 8. SAFE-MODE CONFIRMATION DIALOG (SECTION 22) */}
+      {/* =========================================================================
+          9. SAFE-MODE CONFIRMATION DIALOG (SECTION 16)
+         ========================================================================= */}
       <Modal
         visible={isApplyModalOpen}
         animationType="fade"
@@ -600,16 +859,16 @@ export default function DesignPreviewScreen() {
         <View style={styles.dialogOverlay}>
           <View style={styles.dialogCard}>
             <View style={styles.dialogIconWrap}>
-              <Feather name="compass" size={28} color={theme.colors.primary} />
+              <Feather name="compass" size={26} color={theme.colors.primary} />
             </View>
 
             <Text style={styles.dialogTitle}>Safe Mode Preview Active</Text>
             <Text style={styles.dialogMessage}>
               You are exploring the proposed Smart Workspace 2.0 interface.
               {'\n\n'}
-              In accordance with project safety guidelines, your original mobile app remains 100% untouched and default throughout this preview.
+              In strict accordance with project safety rules, your original mobile app design remains 100% active, default, and protected throughout this session.
               {'\n\n'}
-              Once approved by your team, this design will be permanently integrated.
+              Once approved by your team, this design can be permanently integrated into the core dashboard.
             </Text>
 
             <View style={styles.dialogActions}>
@@ -646,79 +905,81 @@ const getStyles = (theme: AppTheme) =>
       flex: 1,
       backgroundColor: theme.colors.background,
     },
-    // Top Safe-Mode Preview Control Bar
-    previewControlBar: {
+
+    // 1. Safe-Mode Preview Toolbar
+    previewToolbar: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      paddingHorizontal: theme.spacing.md,
-      paddingTop: Platform.OS === 'ios' ? 50 : 36,
-      paddingBottom: 10,
+      paddingHorizontal: 12,
+      paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 20) + 8 : 48,
+      paddingBottom: 8,
       backgroundColor: theme.colors.surface,
       borderBottomWidth: 1,
       borderBottomColor: theme.colors.border,
-      zIndex: 10,
+      zIndex: 20,
     },
-    backButton: {
+    toolbarBackBtn: {
       flexDirection: 'row',
       alignItems: 'center',
       paddingVertical: 6,
       paddingHorizontal: 10,
       borderRadius: theme.radius.sm,
       backgroundColor: theme.colors.iconBg,
+      maxWidth: 130,
     },
-    backButtonText: {
-      ...theme.typography.caption,
+    toolbarBackText: {
+      fontSize: 12,
       fontWeight: '600',
       color: theme.colors.textPrimary,
-      marginLeft: 6,
+      marginLeft: 4,
     },
-    previewTagContainer: {
+    toolbarCenterPill: {
       flexDirection: 'row',
       alignItems: 'center',
       paddingHorizontal: 8,
       paddingVertical: 4,
-      borderRadius: 12,
+      borderRadius: 10,
       backgroundColor: theme.colors.primaryGlow,
     },
-    pulsingDot: {
+    toolbarPulsingDot: {
       width: 6,
       height: 6,
       borderRadius: 3,
       backgroundColor: theme.colors.primary,
-      marginRight: 6,
+      marginRight: 5,
     },
-    previewTagText: {
+    toolbarCenterText: {
       fontSize: 10,
-      fontWeight: '700',
+      fontWeight: '800',
       letterSpacing: 0.8,
       color: theme.colors.primary,
     },
-    applyButton: {
+    toolbarApplyBtn: {
       flexDirection: 'row',
       alignItems: 'center',
       paddingVertical: 6,
-      paddingHorizontal: 12,
+      paddingHorizontal: 10,
       borderRadius: theme.radius.sm,
       backgroundColor: theme.colors.primary,
     },
-    applyButtonText: {
-      ...theme.typography.caption,
+    toolbarApplyText: {
+      fontSize: 12,
       fontWeight: '700',
       color: '#FFFFFF',
       marginLeft: 4,
     },
 
     scrollContent: {
-      paddingBottom: 60,
+      paddingBottom: 50,
     },
 
-    // Header Card
+    // 2. Personal Context Header
     headerCard: {
       backgroundColor: theme.colors.surface,
-      paddingHorizontal: theme.spacing.lg,
-      paddingTop: theme.spacing.md,
-      paddingBottom: theme.spacing.lg,
+      paddingHorizontal: 16,
+      paddingTop: 16,
+      paddingBottom: 18,
       borderBottomLeftRadius: theme.radius.lg,
       borderBottomRightRadius: theme.radius.lg,
       borderWidth: 1,
@@ -729,22 +990,44 @@ const getStyles = (theme: AppTheme) =>
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      marginBottom: theme.spacing.md,
+      marginBottom: 14,
     },
-    userInfo: {
+    userInfoCol: {
       flex: 1,
+      marginRight: 12,
     },
     greetingText: {
-      ...theme.typography.caption,
+      fontSize: 11,
+      fontWeight: '600',
       color: theme.colors.textSecondary,
-      fontWeight: '500',
       letterSpacing: 0.5,
       textTransform: 'uppercase',
     },
-    userNameText: {
-      ...theme.typography.h2,
-      color: theme.colors.textPrimary,
+    nameRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
       marginTop: 2,
+    },
+    userNameText: {
+      fontSize: 20,
+      fontWeight: '800',
+      color: theme.colors.textPrimary,
+      marginRight: 8,
+      maxWidth: 180,
+    },
+    rolePill: {
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 6,
+      backgroundColor: theme.colors.iconBg,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+    },
+    rolePillText: {
+      fontSize: 9,
+      fontWeight: '700',
+      color: theme.colors.primary,
+      letterSpacing: 0.5,
     },
     notificationBtn: {
       width: 40,
@@ -755,16 +1038,36 @@ const getStyles = (theme: AppTheme) =>
       alignItems: 'center',
       borderWidth: 1,
       borderColor: theme.colors.border,
+      position: 'relative',
+    },
+    notifBadge: {
+      position: 'absolute',
+      top: -2,
+      right: -2,
+      backgroundColor: theme.colors.error,
+      minWidth: 16,
+      height: 16,
+      borderRadius: 8,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 3,
+      borderWidth: 1.5,
+      borderColor: theme.colors.surface,
+    },
+    notifBadgeText: {
+      color: '#FFFFFF',
+      fontSize: 9,
+      fontWeight: '700',
     },
 
-    // Workspace Selector Pill
+    // 3. Workspace Selector Pill
     workspacePill: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
       padding: 12,
       borderRadius: theme.radius.md,
-      backgroundColor: theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+      backgroundColor: theme.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
       borderWidth: 1,
       borderColor: theme.colors.borderHighlight,
     },
@@ -772,8 +1075,9 @@ const getStyles = (theme: AppTheme) =>
       flexDirection: 'row',
       alignItems: 'center',
       flex: 1,
+      marginRight: 10,
     },
-    orgAvatarMini: {
+    orgAvatarBadge: {
       width: 34,
       height: 34,
       borderRadius: 17,
@@ -782,9 +1086,9 @@ const getStyles = (theme: AppTheme) =>
       alignItems: 'center',
       marginRight: 10,
     },
-    orgAvatarText: {
+    orgAvatarBadgeText: {
       color: '#FFFFFF',
-      fontWeight: '700',
+      fontWeight: '800',
       fontSize: 14,
     },
     workspaceTextCol: {
@@ -797,9 +1101,14 @@ const getStyles = (theme: AppTheme) =>
       letterSpacing: 0.8,
     },
     workspaceName: {
-      ...theme.typography.body,
+      fontSize: 14,
       fontWeight: '700',
       color: theme.colors.textPrimary,
+      marginTop: 1,
+    },
+    workspaceSubtext: {
+      fontSize: 11,
+      color: theme.colors.textSecondary,
       marginTop: 1,
     },
     workspacePillRight: {
@@ -809,7 +1118,7 @@ const getStyles = (theme: AppTheme) =>
     projectCountBadge: {
       paddingHorizontal: 8,
       paddingVertical: 3,
-      borderRadius: 10,
+      borderRadius: 8,
       backgroundColor: theme.colors.iconBg,
       marginRight: 6,
     },
@@ -819,115 +1128,184 @@ const getStyles = (theme: AppTheme) =>
       color: theme.colors.textSecondary,
     },
 
-    // Stats Strip
-    statsStrip: {
+    // Section Headings
+    sectionHeadingRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-around',
-      marginTop: theme.spacing.md,
-      marginHorizontal: theme.spacing.lg,
-      padding: theme.spacing.md,
+      justifyContent: 'space-between',
+      marginHorizontal: 16,
+      marginTop: 20,
+      marginBottom: 10,
+    },
+    sectionHeadingText: {
+      fontSize: 11,
+      fontWeight: '800',
+      color: theme.colors.textSecondary,
+      letterSpacing: 0.8,
+    },
+    sectionHeadingHint: {
+      fontSize: 11,
+      color: theme.colors.textMuted,
+    },
+
+    // 4. Actionable Metrics Grid
+    metricsGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+      marginHorizontal: 16,
+    },
+    metricCard: {
+      width: '48.5%',
+      padding: 12,
       borderRadius: theme.radius.md,
       backgroundColor: theme.colors.surface,
       borderWidth: 1,
       borderColor: theme.colors.border,
+      marginBottom: 10,
     },
-    statBox: {
+    metricCardActive: {
+      borderColor: theme.colors.primary,
+      backgroundColor: theme.isDark ? 'rgba(45, 212, 191, 0.08)' : 'rgba(13, 148, 136, 0.08)',
+    },
+    metricCardHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
       alignItems: 'center',
-      flex: 1,
+      marginBottom: 4,
     },
-    statValue: {
+    metricValText: {
       fontSize: 20,
       fontWeight: '800',
       color: theme.colors.textPrimary,
     },
-    statLabel: {
-      ...theme.typography.caption,
-      color: theme.colors.textSecondary,
+    metricLabelText: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: theme.colors.textPrimary,
       marginTop: 2,
     },
-    statDivider: {
-      width: 1,
-      height: 24,
-      backgroundColor: theme.colors.border,
-    },
-    progressTrackWrapper: {
-      height: 4,
-      backgroundColor: theme.colors.iconBg,
-      marginHorizontal: theme.spacing.lg,
-      marginTop: 6,
-      borderRadius: 2,
-      overflow: 'hidden',
-    },
-    progressTrackFill: {
-      height: '100%',
-      backgroundColor: theme.colors.primary,
+    metricSubLabel: {
+      fontSize: 10,
+      color: theme.colors.textSecondary,
+      marginTop: 1,
     },
 
-    // Quick Actions
-    quickActionsRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginHorizontal: theme.spacing.lg,
-      marginTop: theme.spacing.md,
-    },
-    actionChip: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingVertical: 10,
-      paddingHorizontal: 12,
+    // Progress Bar
+    progressContainer: {
+      marginHorizontal: 16,
+      padding: 12,
       borderRadius: theme.radius.md,
       backgroundColor: theme.colors.surface,
       borderWidth: 1,
       borderColor: theme.colors.border,
-      flex: 1,
-      marginHorizontal: 4,
-      justifyContent: 'center',
+      marginBottom: 6,
     },
-    actionChipText: {
-      ...theme.typography.caption,
+    progressHeaderRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 8,
+    },
+    progressLabel: {
+      fontSize: 12,
       fontWeight: '600',
       color: theme.colors.textPrimary,
-      marginLeft: 6,
+    },
+    progressPercentText: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: theme.colors.primary,
+    },
+    progressBarTrack: {
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: theme.colors.iconBg,
+      overflow: 'hidden',
+    },
+    progressBarFill: {
+      height: '100%',
+      backgroundColor: theme.colors.primary,
+      borderRadius: 3,
     },
 
-    // Projects Section
+    // 5. Quick Actions 2x2 Grid
+    quickActionsGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+      marginHorizontal: 16,
+    },
+    actionGridCard: {
+      width: '48.5%',
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 12,
+      borderRadius: theme.radius.md,
+      backgroundColor: theme.colors.surface,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      marginBottom: 10,
+    },
+    actionIconWrap: {
+      width: 34,
+      height: 34,
+      borderRadius: 10,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 10,
+    },
+    actionTextCol: {
+      flex: 1,
+    },
+    actionTitle: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: theme.colors.textPrimary,
+    },
+    actionDesc: {
+      fontSize: 10,
+      color: theme.colors.textSecondary,
+      marginTop: 1,
+    },
+
+    // 6. Accessible Projects
     sectionHeaderRow: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      marginHorizontal: theme.spacing.lg,
-      marginTop: theme.spacing.lg,
+      marginHorizontal: 16,
+      marginTop: 16,
       marginBottom: 8,
     },
     sectionTitle: {
-      fontSize: 12,
-      fontWeight: '700',
+      fontSize: 11,
+      fontWeight: '800',
       color: theme.colors.textSecondary,
       letterSpacing: 0.8,
     },
     sectionSubtitle: {
-      ...theme.typography.caption,
+      fontSize: 11,
       color: theme.colors.textMuted,
-      marginTop: 2,
+      marginTop: 1,
     },
-    clearFilterBadge: {
+    clearFilterChip: {
       paddingHorizontal: 8,
       paddingVertical: 4,
-      borderRadius: 12,
+      borderRadius: 8,
       backgroundColor: theme.colors.errorBg,
     },
-    clearFilterText: {
+    clearFilterChipText: {
       fontSize: 11,
-      fontWeight: '600',
+      fontWeight: '700',
       color: theme.colors.error,
     },
     projectsCarousel: {
-      paddingHorizontal: theme.spacing.lg,
-      paddingVertical: 8,
+      paddingHorizontal: 16,
+      paddingVertical: 4,
     },
     projectCard: {
-      width: 170,
+      width: 175,
       padding: 14,
       borderRadius: theme.radius.md,
       backgroundColor: theme.colors.surface,
@@ -943,11 +1321,11 @@ const getStyles = (theme: AppTheme) =>
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: 10,
+      marginBottom: 8,
     },
     projectIconWrap: {
-      width: 32,
-      height: 32,
+      width: 30,
+      height: 30,
       borderRadius: 8,
       backgroundColor: theme.colors.iconBg,
       justifyContent: 'center',
@@ -956,38 +1334,48 @@ const getStyles = (theme: AppTheme) =>
     projectIconWrapActive: {
       backgroundColor: theme.colors.primary,
     },
-    projectBadge: {
+    projectCountTag: {
       paddingHorizontal: 6,
       paddingVertical: 2,
-      borderRadius: 8,
+      borderRadius: 6,
       backgroundColor: theme.colors.iconBg,
     },
-    projectBadgeText: {
+    projectCountTagActive: {
+      backgroundColor: theme.colors.primaryGlow,
+    },
+    projectCountTagText: {
       fontSize: 10,
       fontWeight: '600',
       color: theme.colors.textSecondary,
     },
     projectCardName: {
-      ...theme.typography.body,
+      fontSize: 14,
       fontWeight: '700',
       color: theme.colors.textPrimary,
-      marginBottom: 4,
+      marginBottom: 3,
     },
     projectCardDesc: {
-      ...theme.typography.caption,
+      fontSize: 11,
       color: theme.colors.textSecondary,
-      height: 32,
+      height: 30,
+      lineHeight: 15,
     },
     projectCardFooter: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
       marginTop: 8,
       borderTopWidth: 1,
       borderTopColor: theme.colors.border,
       paddingTop: 8,
     },
-    projectActionHint: {
+    projectCardActionText: {
       fontSize: 11,
       fontWeight: '600',
-      color: theme.colors.primary,
+      color: theme.colors.textSecondary,
+    },
+    projectDetailsLink: {
+      padding: 4,
     },
     emptyProjectsCard: {
       padding: 24,
@@ -998,33 +1386,40 @@ const getStyles = (theme: AppTheme) =>
       borderStyle: 'dashed',
       alignItems: 'center',
       justifyContent: 'center',
-      width: 240,
+      width: 250,
     },
-    emptyProjectsText: {
-      ...theme.typography.caption,
+    emptyProjectsTitle: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: theme.colors.textPrimary,
+      marginTop: 6,
+    },
+    emptyProjectsDesc: {
+      fontSize: 11,
       color: theme.colors.textSecondary,
-      marginTop: 8,
-      marginBottom: 12,
+      textAlign: 'center',
+      marginTop: 2,
+      marginBottom: 10,
     },
-    emptyCreateBtn: {
+    emptyCreateProjectBtn: {
       paddingVertical: 6,
       paddingHorizontal: 12,
       borderRadius: theme.radius.sm,
       backgroundColor: theme.colors.primary,
     },
-    emptyCreateBtnText: {
-      fontSize: 12,
+    emptyCreateProjectText: {
+      fontSize: 11,
       fontWeight: '700',
       color: '#FFFFFF',
     },
 
-    // Feed Section
+    // 7. Workspace Focus Feed
     feedHeaderRow: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      marginHorizontal: theme.spacing.lg,
-      marginTop: theme.spacing.lg,
+      marginHorizontal: 16,
+      marginTop: 20,
       marginBottom: 10,
     },
     feedCountText: {
@@ -1034,19 +1429,19 @@ const getStyles = (theme: AppTheme) =>
     },
     segmentedControl: {
       flexDirection: 'row',
-      marginHorizontal: theme.spacing.lg,
-      padding: 4,
+      marginHorizontal: 16,
+      padding: 3,
       borderRadius: theme.radius.md,
       backgroundColor: theme.colors.surface,
       borderWidth: 1,
       borderColor: theme.colors.border,
-      marginBottom: 12,
+      marginBottom: 10,
     },
     segmentBtn: {
       flex: 1,
-      paddingVertical: 8,
+      paddingVertical: 7,
       alignItems: 'center',
-      borderRadius: theme.radius.sm,
+      borderRadius: theme.radius.sm - 2,
     },
     segmentBtnActive: {
       backgroundColor: theme.colors.primary,
@@ -1060,29 +1455,45 @@ const getStyles = (theme: AppTheme) =>
       color: '#FFFFFF',
       fontWeight: '700',
     },
-
-    // Task List
-    taskListContainer: {
-      marginHorizontal: theme.spacing.lg,
+    taskSearchBox: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginHorizontal: 16,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: theme.radius.md,
+      backgroundColor: theme.colors.surface,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      marginBottom: 10,
     },
-    taskItem: {
+    taskSearchInput: {
+      flex: 1,
+      fontSize: 13,
+      color: theme.colors.textPrimary,
+      padding: 0,
+    },
+    taskListContainer: {
+      marginHorizontal: 16,
+    },
+    taskCardItem: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      padding: 14,
+      padding: 12,
       borderRadius: theme.radius.md,
       backgroundColor: theme.colors.surface,
       borderWidth: 1,
       borderColor: theme.colors.border,
       marginBottom: 8,
     },
-    taskItemLeft: {
+    taskCardLeft: {
       flexDirection: 'row',
       alignItems: 'center',
       flex: 1,
       marginRight: 10,
     },
-    priorityPill: {
+    priorityIconBadge: {
       width: 28,
       height: 28,
       borderRadius: 14,
@@ -1107,28 +1518,29 @@ const getStyles = (theme: AppTheme) =>
       fontSize: 11,
       color: theme.colors.textMuted,
       marginLeft: 4,
+      maxWidth: 120,
     },
-    taskTitle: {
-      ...theme.typography.body,
+    taskTitleText: {
+      fontSize: 14,
       fontWeight: '600',
       color: theme.colors.textPrimary,
     },
-    taskItemRight: {
+    taskCardRight: {
       flexDirection: 'row',
       alignItems: 'center',
     },
-    statusTag: {
+    statusBadge: {
       paddingHorizontal: 8,
       paddingVertical: 3,
-      borderRadius: 10,
+      borderRadius: 8,
       marginRight: 6,
     },
-    statusTagText: {
+    statusBadgeText: {
       fontSize: 10,
       fontWeight: '700',
     },
-    emptyTasksBox: {
-      padding: 32,
+    emptyFeedCard: {
+      padding: 28,
       borderRadius: theme.radius.md,
       backgroundColor: theme.colors.surface,
       borderWidth: 1,
@@ -1136,19 +1548,48 @@ const getStyles = (theme: AppTheme) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    emptyTasksTitle: {
-      ...theme.typography.body,
+    emptyFeedTitle: {
+      fontSize: 14,
       fontWeight: '700',
       color: theme.colors.textPrimary,
     },
-    emptyTasksDesc: {
-      ...theme.typography.caption,
+    emptyFeedDesc: {
+      fontSize: 12,
       color: theme.colors.textSecondary,
       textAlign: 'center',
       marginTop: 4,
+      lineHeight: 18,
+    },
+    emptyResetBtn: {
+      marginTop: 10,
+      paddingVertical: 6,
+      paddingHorizontal: 12,
+      borderRadius: theme.radius.sm,
+      backgroundColor: theme.colors.iconBg,
+    },
+    emptyResetBtnText: {
+      fontSize: 11,
+      fontWeight: '600',
+      color: theme.colors.primary,
+    },
+    viewAllTasksBtn: {
+      marginHorizontal: 16,
+      marginTop: 6,
+      paddingVertical: 12,
+      borderRadius: theme.radius.md,
+      backgroundColor: theme.colors.surface,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    viewAllTasksText: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: theme.colors.primary,
     },
 
-    // Workspace Drawer Modal
+    // 8. Drawer Modal
     modalOverlay: {
       flex: 1,
       backgroundColor: 'rgba(0,0,0,0.6)',
@@ -1176,15 +1617,16 @@ const getStyles = (theme: AppTheme) =>
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'flex-start',
-      paddingHorizontal: theme.spacing.lg,
-      marginBottom: 12,
+      paddingHorizontal: 16,
+      marginBottom: 10,
     },
     drawerTitle: {
-      ...theme.typography.h2,
+      fontSize: 18,
+      fontWeight: '800',
       color: theme.colors.textPrimary,
     },
     drawerSubtitle: {
-      ...theme.typography.caption,
+      fontSize: 12,
       color: theme.colors.textSecondary,
       marginTop: 2,
     },
@@ -1193,13 +1635,29 @@ const getStyles = (theme: AppTheme) =>
       borderRadius: 16,
       backgroundColor: theme.colors.iconBg,
     },
+    drawerSearchBox: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginHorizontal: 16,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: theme.radius.md,
+      backgroundColor: theme.colors.iconBg,
+      marginBottom: 10,
+    },
+    drawerSearchInput: {
+      flex: 1,
+      fontSize: 13,
+      color: theme.colors.textPrimary,
+      padding: 0,
+    },
     drawerList: {
-      paddingHorizontal: theme.spacing.lg,
+      paddingHorizontal: 16,
     },
     drawerDivider: {
       height: 1,
       backgroundColor: theme.colors.border,
-      marginVertical: 8,
+      marginVertical: 6,
     },
     orgItem: {
       flexDirection: 'row',
@@ -1216,16 +1674,16 @@ const getStyles = (theme: AppTheme) =>
       backgroundColor: theme.colors.primaryGlow,
     },
     orgAvatar: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
+      width: 36,
+      height: 36,
+      borderRadius: 18,
       backgroundColor: theme.colors.primary,
       justifyContent: 'center',
       alignItems: 'center',
-      marginRight: 12,
+      marginRight: 10,
     },
     orgAvatarLetter: {
-      fontSize: 16,
+      fontSize: 14,
       fontWeight: '700',
       color: '#FFFFFF',
     },
@@ -1233,18 +1691,26 @@ const getStyles = (theme: AppTheme) =>
       flex: 1,
     },
     orgItemName: {
-      ...theme.typography.body,
+      fontSize: 13,
       fontWeight: '700',
       color: theme.colors.textPrimary,
     },
     orgItemDesc: {
-      ...theme.typography.caption,
+      fontSize: 11,
       color: theme.colors.textSecondary,
       marginTop: 1,
     },
+    emptyOrgsBox: {
+      padding: 20,
+      alignItems: 'center',
+    },
+    emptyOrgsText: {
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+    },
     drawerFooter: {
-      paddingHorizontal: theme.spacing.lg,
-      paddingTop: 12,
+      paddingHorizontal: 16,
+      paddingTop: 10,
       borderTopWidth: 1,
       borderTopColor: theme.colors.border,
     },
@@ -1257,51 +1723,51 @@ const getStyles = (theme: AppTheme) =>
       backgroundColor: theme.colors.iconBg,
     },
     createOrgBtnText: {
-      ...theme.typography.body,
+      fontSize: 13,
       fontWeight: '700',
       color: theme.colors.primary,
-      marginLeft: 8,
+      marginLeft: 6,
     },
 
-    // Safe-Mode Dialog
+    // 9. Safe-Mode Dialog
     dialogOverlay: {
       flex: 1,
-      backgroundColor: 'rgba(0,0,0,0.7)',
+      backgroundColor: 'rgba(0,0,0,0.65)',
       justifyContent: 'center',
       alignItems: 'center',
-      padding: theme.spacing.lg,
+      padding: 20,
     },
     dialogCard: {
       width: '100%',
       backgroundColor: theme.colors.surface,
       borderRadius: theme.radius.xl,
-      padding: theme.spacing.xl,
+      padding: 20,
       alignItems: 'center',
       borderWidth: 1,
       borderColor: theme.colors.borderHighlight,
-      ...theme.shadows.glass,
     },
     dialogIconWrap: {
-      width: 56,
-      height: 56,
-      borderRadius: 28,
+      width: 52,
+      height: 52,
+      borderRadius: 26,
       backgroundColor: theme.colors.primaryGlow,
       justifyContent: 'center',
       alignItems: 'center',
-      marginBottom: 16,
+      marginBottom: 14,
     },
     dialogTitle: {
-      ...theme.typography.h2,
+      fontSize: 18,
+      fontWeight: '800',
       color: theme.colors.textPrimary,
       textAlign: 'center',
-      marginBottom: 10,
+      marginBottom: 8,
     },
     dialogMessage: {
-      ...theme.typography.body,
+      fontSize: 13,
       color: theme.colors.textSecondary,
       textAlign: 'center',
-      lineHeight: 22,
-      marginBottom: 20,
+      lineHeight: 20,
+      marginBottom: 18,
     },
     dialogActions: {
       flexDirection: 'row',
@@ -1314,10 +1780,10 @@ const getStyles = (theme: AppTheme) =>
       borderRadius: theme.radius.md,
       backgroundColor: theme.colors.iconBg,
       alignItems: 'center',
-      marginRight: 8,
+      marginRight: 6,
     },
     dialogBtnSecondaryText: {
-      ...theme.typography.caption,
+      fontSize: 12,
       fontWeight: '700',
       color: theme.colors.textSecondary,
     },
@@ -1327,10 +1793,10 @@ const getStyles = (theme: AppTheme) =>
       borderRadius: theme.radius.md,
       backgroundColor: theme.colors.primary,
       alignItems: 'center',
-      marginLeft: 8,
+      marginLeft: 6,
     },
     dialogBtnPrimaryText: {
-      ...theme.typography.caption,
+      fontSize: 12,
       fontWeight: '700',
       color: '#FFFFFF',
     },
