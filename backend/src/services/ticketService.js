@@ -26,7 +26,7 @@ const createTicket = async (ticketData, userId) => {
         userId
     );
 
-    if (ticket.AssignedTo && ticket.AssignedTo !== userId) {
+    if (ticket.AssignedTo && Number(ticket.AssignedTo) !== Number(userId)) {
         await notificationService.ticketAssigned(ticket, ticket.AssignedTo, userId);
     }
 
@@ -181,6 +181,11 @@ const assignTicket = async (
         return ticket;
     }
 
+    // A repeated request must not create duplicate activity or push alerts.
+    if (Number(existingTicket.AssignedTo) === Number(assignedUserId)) {
+        return existingTicket;
+    }
+
     // Check if assigned user exists
     const user = await authRepository.findUserById(
         assignedUserId
@@ -212,11 +217,15 @@ const assignTicket = async (
         currentUserId
     );
 
-    await notificationService.ticketReassigned(
-        ticket,
-        existingTicket.AssignedTo,
-        currentUserId
-    );
+    if (existingTicket.AssignedTo) {
+        await notificationService.ticketReassigned(
+            ticket,
+            existingTicket.AssignedTo,
+            currentUserId
+        );
+    } else {
+        await notificationService.ticketAssigned(ticket, assignedUserId, currentUserId);
+    }
 
     return ticket;
 };

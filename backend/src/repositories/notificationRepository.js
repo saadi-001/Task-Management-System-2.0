@@ -10,13 +10,13 @@ class NotificationRepository {
       if (existingToken.UserID !== userId) {
         return prisma.devicetoken.update({
           where: { Token: token },
-          data: { UserID: userId, IsActive: true },
+          data: { UserID: userId, Platform: platform, DeviceId: deviceId, IsActive: true },
         });
       }
-      if (!existingToken.IsActive) {
+      if (!existingToken.IsActive || existingToken.Platform !== platform || existingToken.DeviceId !== deviceId) {
         return prisma.devicetoken.update({
           where: { Token: token },
-          data: { IsActive: true },
+          data: { Platform: platform, DeviceId: deviceId, IsActive: true },
         });
       }
       return existingToken;
@@ -34,6 +34,13 @@ class NotificationRepository {
 
   async removeDeviceToken(token) {
     return prisma.devicetoken.update({
+      where: { Token: token },
+      data: { IsActive: false },
+    });
+  }
+
+  async deactivateDeviceToken(token) {
+    return prisma.devicetoken.updateMany({
       where: { Token: token },
       data: { IsActive: false },
     });

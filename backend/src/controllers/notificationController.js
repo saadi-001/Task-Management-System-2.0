@@ -12,7 +12,8 @@ exports.registerToken = async (req, res) => {
     const result = await notificationService.registerDeviceToken(userId, token, platform, deviceId);
     res.status(200).json({ message: 'Device registered successfully', data: result });
   } catch (error) {
-    res.status(500).json({ message: 'Error registering device token', error: error.message });
+    const status = /not a valid Expo push token/.test(error.message) ? 400 : 500;
+    res.status(status).json({ message: 'Error registering device token', error: error.message });
   }
 };
 
@@ -34,7 +35,7 @@ exports.getUserNotifications = async (req, res) => {
   try {
     const userId = req.user.UserID;
     const notifications = await notificationService.getUserNotifications(userId);
-    res.status(200).json(notifications);
+    res.status(200).json({ success: true, data: notifications });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching notifications', error: error.message });
   }

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Platform } from 'react-native';
 import { Feather } from '@expo/vector-icons';
@@ -82,8 +82,12 @@ export default function NotificationsScreen() {
 
   const getIconForType = (type: string) => {
     switch (type) {
-      case 'TICKET_ASSIGNED': return { name: 'user-plus', color: theme.colors.stats.purple.color, bg: theme.colors.stats.purple.bg };
+      case 'TICKET_ASSIGNED': 
+      case 'TICKET_REASSIGNED':
+        return { name: 'user-plus', color: theme.colors.stats.purple.color, bg: theme.colors.stats.purple.bg };
       case 'TICKET_STATUS_CHANGED': return { name: 'activity', color: theme.colors.stats.blue.color, bg: theme.colors.stats.blue.bg };
+      case 'TICKET_COMPLETED': return { name: 'check-circle', color: theme.colors.success, bg: theme.colors.successBg };
+      case 'TICKET_PRIORITY_CHANGED': return { name: 'alert-circle', color: theme.colors.error, bg: theme.colors.errorBg };
       case 'PROJECT_ASSIGNED': return { name: 'folder', color: theme.colors.stats.orange.color, bg: theme.colors.stats.orange.bg };
       default: return { name: 'bell', color: theme.colors.primary, bg: theme.colors.primaryGlow };
     }

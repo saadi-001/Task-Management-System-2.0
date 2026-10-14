@@ -113,7 +113,14 @@ async function registerForPushNotificationsAsync() {
   try {
     if (Platform.OS === 'android') {
       await Notifications.setNotificationChannelAsync('default', {
-        name: 'Task updates',
+        name: 'General notifications',
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#5B5BF7',
+      });
+      await Notifications.setNotificationChannelAsync('task-updates', {
+        name: 'Task assignments and updates',
+        description: 'Alerts when a task is assigned, reassigned, or updated',
         importance: Notifications.AndroidImportance.MAX,
         vibrationPattern: [0, 250, 250, 250],
         lightColor: '#5B5BF7',

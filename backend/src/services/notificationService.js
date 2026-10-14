@@ -48,6 +48,8 @@ class NotificationService {
       messages.push({
         to: tokenRecord.Token,
         sound: 'default',
+        channelId: 'task-updates',
+        priority: 'high',
         title: data.title,
         body: data.body,
         data: { 
@@ -65,7 +67,13 @@ class NotificationService {
     const chunks = this.expo.chunkPushNotifications(messages);
     for (const chunk of chunks) {
       try {
-        await this.expo.sendPushNotificationsAsync(chunk);
+        const tickets = await this.expo.sendPushNotificationsAsync(chunk);
+        await Promise.all(tickets.map((ticket, index) => {
+          if (ticket.status === 'error' && ticket.details?.error === 'DeviceNotRegistered') {
+            return notificationRepository.deactivateDeviceToken(chunk[index].to);
+          }
+          return undefined;
+        }));
       } catch (error) {
         console.error('Error sending push notification chunk:', error);
       }
@@ -76,8 +84,8 @@ class NotificationService {
 
   // --- Specific Business Events ---
 
-  async ticketAssigned(ticket, assignedToUserId, assignerName) {
-    if (!assignedToUserId) return;
+  async ticketAssigned(ticket, assignedToUserId, actorId) {
+    if (!assignedToUserId || Number(assignedToUserId) === Number(actorId)) return;
     
     await this.sendNotification({
       userId: assignedToUserId,
