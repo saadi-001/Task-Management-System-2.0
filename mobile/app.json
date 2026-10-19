@@ -31,17 +31,20 @@
       [
         "expo-notifications",
         {
+          "icon": "./assets/notification-icon.png",
           "color": "#5B5BF7",
           "defaultChannel": "task-updates"
         }
       ],
       "expo-font",
-      "expo-asset"
+      "expo-asset",
+      "expo-background-task"
     ],
     "extra": {
       "eas": {
-        "projectId": "fa3723b6-8262-41a3-b88d-363007e57b35"
+        "projectId": "daf945df-65a1-42b8-9f1b-59a26289701a"
       }
-    }
+    },
+    "owner": "alijah.dev"
   }
 }
