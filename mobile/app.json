@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "TMS Neural",
+    "name": "Tasko",
     "slug": "mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -14,7 +14,7 @@
         "POST_NOTIFICATIONS"
       ],
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#0E121E",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
