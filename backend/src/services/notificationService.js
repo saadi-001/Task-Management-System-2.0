@@ -37,11 +37,17 @@ class NotificationService {
     const notification = await notificationRepository.createNotification(data);
     const tokens = await notificationRepository.getActiveTokensForUser(data.userId);
 
-    if (tokens.length === 0) return notification;
+    if (tokens.length === 0) {
+      console.warn(
+        `No push token for user ${data.userId}; notification ${notification.NotificationID} stays in the app list only`
+      );
+      return notification;
+    }
 
     const messages = [];
     for (const tokenRecord of tokens) {
       if (!Expo.isExpoPushToken(tokenRecord.Token)) {
+        console.warn(`Skipping invalid push token for user ${data.userId}`);
         continue;
       }
 
@@ -50,12 +56,13 @@ class NotificationService {
         sound: 'default',
         channelId: 'task-updates',
         priority: 'high',
+        ttl: 60 * 60 * 24,
         title: data.title,
         body: data.body,
-        data: { 
+        data: {
           notificationId: notification.NotificationID,
-          type: data.type, 
-          entityType: data.entityType, 
+          type: data.type,
+          entityType: data.entityType,
           entityId: data.entityId,
           ticketId: data.entityType === 'TICKET' ? data.entityId : undefined,
           projectId: data.entityType === 'PROJECT' ? data.entityId : undefined,
@@ -64,19 +71,44 @@ class NotificationService {
       });
     }
 
+    if (messages.length === 0) return notification;
+
+    const receiptIds = [];
     const chunks = this.expo.chunkPushNotifications(messages);
     for (const chunk of chunks) {
       try {
         const tickets = await this.expo.sendPushNotificationsAsync(chunk);
         await Promise.all(tickets.map((ticket, index) => {
-          if (ticket.status === 'error' && ticket.details?.error === 'DeviceNotRegistered') {
-            return notificationRepository.deactivateDeviceToken(chunk[index].to);
+          if (ticket.status === 'ok' && ticket.id) {
+            receiptIds.push(ticket.id);
+            return undefined;
+          }
+          if (ticket.status === 'error') {
+            console.error('Push ticket error:', ticket.message, ticket.details || '');
+            if (ticket.details?.error === 'DeviceNotRegistered') {
+              return notificationRepository.deactivateDeviceToken(chunk[index].to);
+            }
           }
           return undefined;
         }));
       } catch (error) {
         console.error('Error sending push notification chunk:', error);
       }
+    }
+
+    if (receiptIds.length > 0) {
+      const timer = setTimeout(() => {
+        this.expo.getPushNotificationReceiptsAsync(receiptIds)
+          .then((receipts) => {
+            Object.entries(receipts).forEach(([id, receipt]) => {
+              if (receipt.status === 'error') {
+                console.error('Push receipt error:', id, receipt.message, receipt.details || '');
+              }
+            });
+          })
+          .catch((error) => console.error('Failed to fetch push receipts:', error));
+      }, 15000);
+      timer.unref?.();
     }
 
     return notification;
