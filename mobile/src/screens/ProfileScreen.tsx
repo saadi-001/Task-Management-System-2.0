@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, Animated, TouchableOpacity, Platform } from 'react-native';
 import ConfirmModal from '../components/common/ConfirmModal';
 import { useAuth } from '../context/AuthContext';
@@ -158,7 +158,7 @@ export default function ProfileScreen({ navigation }: any) {
         </Animated.View>
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>TASK MANAGEMENT SYSTEM</Text>
+          <Text style={styles.footerText}>TASKO</Text>
           <Text style={styles.versionText}>v2.0.0 (Neural Core)</Text>
         </View>
         

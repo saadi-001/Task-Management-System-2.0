@@ -43,7 +43,7 @@ export default function App() {
           <AuthProvider>
             <WorkspaceProvider>
               <NavigationContainer>
-                <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+                <StatusBar barStyle="dark-content" />
                 <AppNavigator />
               </NavigationContainer>
             </WorkspaceProvider>

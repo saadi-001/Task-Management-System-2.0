@@ -76,12 +76,12 @@ export async function ensureNotificationPermission() {
   if (!Notifications) return false;
 
   const existing = await Notifications.getPermissionsAsync();
-  if (existing.status === 'granted') return true;
+  if (existing.granted) return true;
   if (permissionRequested) return false;
 
   permissionRequested = true;
   const next = await Notifications.requestPermissionsAsync();
-  return next.status === 'granted';
+  return next.granted;
 }
 
 export async function registerExpoPushToken() {

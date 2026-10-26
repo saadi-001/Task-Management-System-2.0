@@ -78,7 +78,7 @@ export default function LoginScreen({ navigation }: { navigation: LoginScreenNav
           <Animated.View style={[styles.headerContainer, { opacity: fadeAnim }]}>
             <View style={styles.logoGlow} />
             <Feather name="check-circle" size={48} color={theme.colors.primary} style={{ marginBottom: 16 }} />
-            <Text style={styles.appTitle}>TASK MANAGEMENT SYSTEM</Text>
+            <Text style={styles.appTitle}>TASKO</Text>
             <Text style={styles.appSubtitle}>Secure Access Gateway</Text>
           </Animated.View>
 

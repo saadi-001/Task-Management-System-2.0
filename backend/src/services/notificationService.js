@@ -13,8 +13,8 @@ class NotificationService {
     return notificationRepository.saveDeviceToken(userId, token, platform, deviceId);
   }
 
-  async unregisterDeviceToken(token) {
-    return notificationRepository.removeDeviceToken(token);
+  async unregisterDeviceToken(token, userId) {
+    return notificationRepository.removeDeviceToken(token, userId);
   }
 
   async getUserNotifications(userId) {
@@ -62,11 +62,11 @@ class NotificationService {
         data: {
           notificationId: notification.NotificationID,
           type: data.type,
-          entityType: data.entityType,
-          entityId: data.entityId,
-          ticketId: data.entityType === 'TICKET' ? data.entityId : undefined,
-          projectId: data.entityType === 'PROJECT' ? data.entityId : undefined,
-          organizationId: data.entityType === 'ORGANIZATION' ? data.entityId : undefined
+          entityType: data.entityType || null,
+          entityId: data.entityId ?? null,
+          ticketId: data.entityType === 'TICKET' ? data.entityId : null,
+          projectId: data.entityType === 'PROJECT' ? data.entityId : null,
+          organizationId: data.entityType === 'ORGANIZATION' ? data.entityId : null
         },
       });
     }

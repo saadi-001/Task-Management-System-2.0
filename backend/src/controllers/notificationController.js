@@ -24,7 +24,7 @@ exports.unregisterToken = async (req, res) => {
       return res.status(400).json({ message: 'Token is required' });
     }
 
-    await notificationService.unregisterDeviceToken(token);
+    await notificationService.unregisterDeviceToken(token, req.user.UserID);
     res.status(200).json({ message: 'Device unregistered successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Error unregistering device token', error: error.message });

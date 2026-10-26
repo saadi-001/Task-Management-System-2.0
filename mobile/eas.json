@@ -1,4 +1,4 @@
-﻿{
+{
   "cli": {
     "version": ">= 12.5.0",
     "appVersionSource": "remote"
@@ -14,7 +14,11 @@
         "buildType": "apk"
       }
     },
-    "production": {}
+    "production": {
+      "android": {
+        "buildType": "apk"
+      }
+    }
   },
   "submit": {
     "production": {}

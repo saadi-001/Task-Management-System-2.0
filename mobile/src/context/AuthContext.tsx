@@ -1,5 +1,6 @@
 ﻿import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authService, User } from '../services/authService';
+import { clearPushRegistration } from '../services/systemNotificationService';
 
 interface AuthContextData {
   user: User | null;
@@ -58,6 +59,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
+    // Unregister while the current JWT is still available. This prevents a
+    // shared device from continuing to receive the previous user's pushes.
+    await clearPushRegistration();
     await authService.removeToken();
     setToken(null);
     setUser(null);

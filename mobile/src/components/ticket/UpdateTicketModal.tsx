@@ -138,7 +138,7 @@ export default function UpdateTicketModal({ visible, onClose, onSave, currentSta
 
 const getStyles = (theme: AppTheme) => StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'flex-end' },
-  backdrop: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.5)' },
+  backdrop: { top: 0, right: 0, bottom: 0, left: 0, position: 'absolute', backgroundColor: 'rgba(0,0,0,0.5)' },
   sheetContainer: {
     backgroundColor: theme.colors.background,
     borderTopLeftRadius: theme.radius.xl,

@@ -70,15 +70,25 @@ export default function DesignPreviewScreen() {
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
 
-  // Animations
+  // Animations (Solar-inspired spring easing & continuous telemetry pulse)
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(16)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
-      Animated.spring(slideAnim, { toValue: 0, tension: 55, friction: 8, useNativeDriver: true }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 350, useNativeDriver: true }),
+      Animated.spring(slideAnim, { toValue: 0, tension: 50, friction: 8, useNativeDriver: true }),
     ]).start();
+
+    // Continuous smooth pulsing glow loop for preview beacon (Solar Voltix inspired)
+    const pulseLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 1.4, duration: 900, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1, duration: 900, useNativeDriver: true }),
+      ])
+    );
+    pulseLoop.start();
 
     // Fetch unread notification count
     const loadUnreadCount = async () => {
@@ -93,6 +103,8 @@ export default function DesignPreviewScreen() {
       }
     };
     loadUnreadCount();
+
+    return () => pulseLoop.stop();
   }, []);
 
   // Fetch team members when team hub is activated
@@ -1155,7 +1167,18 @@ export default function DesignPreviewScreen() {
 
         {/* Center: Preview status pill */}
         <View style={styles.toolbarCenterPill}>
-          <View style={styles.toolbarPulsingDot} />
+          <Animated.View
+            style={[
+              styles.toolbarPulsingDot,
+              {
+                transform: [{ scale: pulseAnim }],
+                opacity: pulseAnim.interpolate({
+                  inputRange: [1, 1.4],
+                  outputRange: [1, 0.6],
+                }),
+              },
+            ]}
+          />
           <Text style={styles.toolbarCenterText} numberOfLines={1}>
             UNIFIED PREVIEW
           </Text>

@@ -32,9 +32,9 @@ class NotificationRepository {
     });
   }
 
-  async removeDeviceToken(token) {
-    return prisma.devicetoken.update({
-      where: { Token: token },
+  async removeDeviceToken(token, userId) {
+    return prisma.devicetoken.updateMany({
+      where: { Token: token, UserID: userId },
       data: { IsActive: false },
     });
   }

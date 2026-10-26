@@ -60,7 +60,7 @@ export default function AppNavigator() {
 
   return (
     <>
-      <StatusBar barStyle={theme.isDark ? 'light-content' : 'dark-content'} backgroundColor="transparent" translucent />
+      <StatusBar barStyle={theme.isDark ? 'light-content' : 'dark-content'} />
       <>
       <NotificationManager />
       <Stack.Navigator
